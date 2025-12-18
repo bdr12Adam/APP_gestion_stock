@@ -3,8 +3,21 @@ include "entete.php";
 include "../model/connexion.php";
 include_once "../model/functions.php";
 
+// Démarrer la session si ce n'est pas déjà fait
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 $message = "";
 $typeMessage = "";
+
+// Récupérer les messages de session (après suppression/modification)
+if (isset($_SESSION['message'])) {
+    $message = $_SESSION['message'];
+    $typeMessage = $_SESSION['typeMessage'];
+    unset($_SESSION['message']);
+    unset($_SESSION['typeMessage']);
+}
 
 // ----- TRAITEMENT FORMULAIRE -----
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -26,13 +39,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $adresse = $_POST["adresse"];
 
         $req = $conn->prepare("
-            INSERT INTO client (nom, prenom, telephone, adresse)
+            INSERT INTO fournisseur 
+            (nom, prenom, telephone, adresse)
             VALUES (?, ?, ?, ?)
         ");
+
         $req->bind_param("ssss", $nom, $prenom, $telephone, $adresse);
 
         if ($req->execute()) {
-            $message = "Client ajouté avec succès !";
+            $message = "Fournisseur ajouté avec succès !";
             $typeMessage = "success";
         } else {
             $message = "Erreur : " . $conn->error;
@@ -43,10 +58,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ----- RÉCUPÉRATION DES CLIENTS -----
-$clients = getClients();
-?>
+// ----- RÉCUPÉRATION DES FOURNISSEURS -----
+$sql = "SELECT * FROM fournisseur ORDER BY id DESC";
+$result = $conn->query($sql);
+$fournisseurs = [];
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $fournisseurs[] = $row;
+    }
+}
 
+?>
 
 <!-- **************  CSS FINAL ************** -->
 <style>
@@ -101,7 +123,7 @@ $clients = getClients();
     left: 0;
     right: 0;
     height: 5px;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(90deg, #10b981 0%, #059669 100%);
 }
 
 /* Titre du formulaire */
@@ -123,7 +145,7 @@ $clients = getClients();
     transform: translateX(-50%);
     width: 60px;
     height: 3px;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(90deg, #10b981 0%, #059669 100%);
     border-radius: 2px;
 }
 
@@ -157,24 +179,14 @@ $clients = getClients();
 
 .input-style:focus {
     background-color: #ffffff;
-    border-color: #667eea;
-    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    border-color: #10b981;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
     transform: translateY(-2px);
 }
 
 .input-style::placeholder {
     color: #a0aec0;
     font-size: 14px;
-}
-
-/* Select personnalisé */
-select.input-style {
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 16px center;
-    padding-right: 45px;
 }
 
 /* Bouton */
@@ -184,12 +196,12 @@ select.input-style {
     font-size: 15px;
     font-weight: 700;
     color: #ffffff;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     border: none;
     border-radius: 9px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.35);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
     text-transform: uppercase;
     letter-spacing: 0.8px;
     margin-top: 8px;
@@ -197,8 +209,8 @@ select.input-style {
 
 .form-box .btn-primary:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.45);
-    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.45);
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
 }
 
 .form-box .btn-primary:active {
@@ -245,7 +257,7 @@ select.input-style {
 
 .table-box {
     flex: 2;
-    min-width: 0; /* Important pour flexbox */
+    min-width: 0;
     width: 100%;
 }
 
@@ -288,12 +300,12 @@ select.input-style {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-/* Style du tableau - Optimisé pour afficher toutes les colonnes */
+/* Style du tableau */
 .table {
     margin-bottom: 0;
     border-collapse: collapse;
     width: 100%;
-    min-width: 900px; /* Largeur minimale pour garantir l'affichage complet */
+    min-width: 700px;
 }
 
 /* Header du tableau */
@@ -316,7 +328,7 @@ select.input-style {
     z-index: 10;
 }
 
-/* Corps du tableau - Colonnes optimisées */
+/* Corps du tableau */
 .table tbody td {
     padding: 14px 12px;
     font-size: 14px;
@@ -324,16 +336,11 @@ select.input-style {
     border: 1px solid #e2e8f0;
     vertical-align: middle;
     text-align: center;
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
-/* Colonne Actions - Largeur fixe */
+/* Colonne Actions */
 .table tbody td:last-child {
     min-width: 180px;
-    max-width: 200px;
     white-space: nowrap;
 }
 
@@ -360,19 +367,9 @@ select.input-style {
 }
 
 /* ==========================
-   BOUTONS D'ACTION OPTIMISÉS
+   BOUTONS D'ACTION
    ========================== */
 
-/* Conteneur des boutons d'action */
-.action-buttons {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-/* Boutons d'action modernes */
 .btn-action {
     display: inline-flex;
     align-items: center;
@@ -388,9 +385,9 @@ select.input-style {
     gap: 6px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     min-width: 80px;
+    margin: 0 4px;
 }
 
-/* Bouton Modifier - Style principal */
 .btn-edit {
     background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
     color: white;
@@ -402,7 +399,6 @@ select.input-style {
     box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
 }
 
-/* Bouton Supprimer - Style principal */
 .btn-delete {
     background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
     color: white;
@@ -414,50 +410,8 @@ select.input-style {
     box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
 }
 
-/* Style compact pour les boutons (utilisé dans le tableau) */
-.btn-action-compact {
-    padding: 6px 12px;
-    font-size: 12px;
-    min-width: 70px;
-    gap: 4px;
-}
-
-/* Boutons circulaires pour les icônes */
-.btn-action-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.btn-edit-icon {
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    color: white;
-}
-
-.btn-edit-icon:hover {
-    transform: translateY(-3px) rotate(5deg);
-    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
-}
-
-.btn-delete-icon {
-    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
-    color: white;
-}
-
-.btn-delete-icon:hover {
-    transform: translateY(-3px) rotate(-5deg);
-    box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
-}
-
 /* ==========================
-   RESPONSIVE DESIGN AMÉLIORÉ
+   RESPONSIVE DESIGN
    ========================== */
 
 @media (max-width: 1200px) {
@@ -475,38 +429,6 @@ select.input-style {
     .table-box {
         width: 100%;
     }
-    
-    .table-box .card {
-        padding: 20px;
-    }
-}
-
-@media (max-width: 992px) {
-    .table-responsive {
-        border-radius: 10px;
-    }
-    
-    .table-dark th {
-        padding: 12px 8px;
-        font-size: 12px;
-    }
-    
-    .table tbody td {
-        padding: 12px 8px;
-        font-size: 13px;
-    }
-    
-    .btn-action {
-        padding: 7px 12px;
-        font-size: 12px;
-        min-width: 75px;
-    }
-    
-    .btn-action-icon {
-        width: 32px;
-        height: 32px;
-        font-size: 14px;
-    }
 }
 
 @media (max-width: 768px) {
@@ -518,103 +440,22 @@ select.input-style {
     .form-box .card,
     .table-box .card {
         padding: 20px 15px;
-        border-radius: 16px;
-    }
-    
-    .form-box h4 {
-        font-size: 18px;
-    }
-    
-    .table-box h4 {
-        font-size: 18px;
-    }
-    
-    .input-style {
-        padding: 10px 12px;
-        font-size: 14px;
-    }
-    
-    .form-box .btn-primary {
-        padding: 12px 0;
-        font-size: 14px;
-    }
-    
-    /* Optimisation pour mobile - Actions en colonne */
-    .table tbody td:last-child {
-        min-width: 150px;
-    }
-    
-    .action-buttons {
-        gap: 6px;
     }
     
     .btn-action {
         padding: 6px 10px;
-        font-size: 11px;
-        min-width: 65px;
-        gap: 4px;
+        font-size: 12px;
+        min-width: 70px;
     }
 }
 
-@media (max-width: 576px) {
-    .flex-container {
-        padding: 0 8px;
-        gap: 15px;
-    }
-    
-    .form-box .card,
-    .table-box .card {
-        padding: 18px 12px;
-    }
-    
-    .table-box h4 {
-        font-size: 16px;
-        margin-bottom: 15px;
-    }
-    
-    /* Adaptation des boutons sur très petits écrans */
-    .action-buttons {
-        flex-direction: column;
-        gap: 5px;
-        align-items: stretch;
-    }
-    
-    .btn-action {
-        width: 100%;
-        min-width: auto;
-        padding: 8px;
-        font-size: 11px;
-    }
-    
-    /* Alternative: boutons icônes seulement sur mobile */
-    .btn-mobile-icon {
-        padding: 8px;
-        min-width: auto;
-        width: 40px;
-        justify-content: center;
-    }
-    
-    .btn-mobile-icon span {
-        display: none;
-    }
-    
-    .btn-mobile-icon::before {
-        content: attr(data-icon);
-        font-size: 14px;
-    }
-}
-
-/* ==========================
-   ANIMATIONS SUPPLÉMENTAIRES
-   ========================== */
-
-/* Effet de pulsation sur le bouton */
+/* Animation sur le bouton */
 @keyframes pulse {
     0%, 100% {
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.35);
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
     }
     50% {
-        box-shadow: 0 4px 25px rgba(102, 126, 234, 0.55);
+        box-shadow: 0 4px 25px rgba(16, 185, 129, 0.55);
     }
 }
 
@@ -626,7 +467,7 @@ select.input-style {
     animation: none;
 }
 
-/* Effet fade-in sur les éléments du tableau */
+/* Effet fade-in sur les lignes du tableau */
 .table tbody tr {
     animation: fadeIn 0.5s ease-out backwards;
 }
@@ -647,79 +488,7 @@ select.input-style {
         transform: translateY(0);
     }
 }
-
-/* Animation sur les boutons d'action */
-@keyframes buttonPulse {
-    0%, 100% {
-        transform: translateY(-3px) scale(1);
-    }
-    50% {
-        transform: translateY(-3px) scale(1.05);
-    }
-}
-
-.btn-action:hover {
-    animation: buttonPulse 0.6s ease;
-}
-
-/* ==========================
-   STYLES ALTERNATIFS POUR BOUTONS
-   ========================== */
-
-/* Style outline */
-.btn-outline {
-    background: transparent;
-    border: 2px solid;
-}
-
-.btn-outline-edit {
-    border-color: #3b82f6;
-    color: #3b82f6;
-}
-
-.btn-outline-edit:hover {
-    background: #3b82f6;
-    color: white;
-}
-
-.btn-outline-delete {
-    border-color: #ef4444;
-    color: #ef4444;
-}
-
-.btn-outline-delete:hover {
-    background: #ef4444;
-    color: white;
-}
-
-/* Style pastel */
-.btn-pastel {
-    border: none;
-}
-
-.btn-pastel-edit {
-    background: #dbeafe;
-    color: #1e40af;
-}
-
-.btn-pastel-edit:hover {
-    background: #3b82f6;
-    color: white;
-}
-
-.btn-pastel-delete {
-    background: #fee2e2;
-    color: #991b1b;
-}
-
-.btn-pastel-delete:hover {
-    background: #ef4444;
-    color: white;
-}
-
-
 </style>
-
 
 <!-- **************  CONTENU ************** -->
 <section class="home-section">
@@ -727,91 +496,103 @@ select.input-style {
 
         <div class="flex-container">
 
-            <!-- FORMULAIRE -->
+            <!-- FORMULAIRE FOURNISSEUR -->
             <div class="form-box">
                 <div class="card shadow-sm">
                     <div class="card-body">
 
-                      <h4 class="mb-4 text-center fw-bold">+ Ajouter un client</h4>
+                        <h4 class="mb-4 text-center fw-bold">👤 Ajouter un Fournisseur</h4>
 
-<form method="post">
+                        <form action="" method="post">
 
-    <div class="mb-3">
-        <label class="form-label fw-bold">Nom</label>
-        <input type="text" class="form-control input-style" name="nom">
-    </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Nom</label>
+                                <input type="text" class="form-control input-style" name="nom" placeholder="Entrez le nom" required>
+                            </div>
 
-    <div class="mb-3">
-        <label class="form-label fw-bold">Prénom</label>
-        <input type="text" class="form-control input-style" name="prenom">
-    </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Prénom</label>
+                                <input type="text" class="form-control input-style" name="prenom" placeholder="Entrez le prénom" required>
+                            </div>
 
-    <div class="mb-3">
-        <label class="form-label fw-bold">Téléphone</label>
-        <input type="text" class="form-control input-style" name="telephone">
-    </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Téléphone</label>
+                                <input type="tel" class="form-control input-style" name="telephone" placeholder="Ex: 0612345678" required>
+                            </div>
 
-    <div class="mb-3">
-        <label class="form-label fw-bold">Adresse</label>
-        <textarea class="form-control input-style" name="adresse"></textarea>
-    </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Adresse</label>
+                                <textarea class="form-control input-style" name="adresse" rows="3" placeholder="Entrez l'adresse complète" required></textarea>
+                            </div>
 
-    <button class="btn btn-primary w-100">Enregistrer</button>
+                            <button class="btn btn-primary w-100">Enregistrer</button>
 
-    <?php if ($message): ?>
-        <div class="alert alert-<?= $typeMessage ?> mt-3 text-center fw-bold">
-            <?= $message ?>
-        </div>
-    <?php endif; ?>
+                            <?php if ($message): ?>
+                                <div class="alert alert-<?= $typeMessage ?> mt-3 text-center fw-bold">
+                                    <?= $message ?>
+                                </div>
+                            <?php endif; ?>
 
-</form>
+                        </form>
 
                     </div>
                 </div>
             </div>
 
-            <!-- TABLEAU -->
+            <!-- TABLEAU DES FOURNISSEURS -->
             <div class="table-box">
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <h4 class="fw-bold mb-3"> 👤 Liste des clients</h4>
+                        <h4 class="fw-bold mb-3">📋 Liste des Fournisseurs</h4>
 
-<div class="table-responsive">
-<table class="table table-bordered table-striped align-middle">
-    <thead class="table-dark">
-        <tr>
-            <th>ID</th>
-            <th>Nom</th>
-            <th>Prénom</th>
-            <th>Téléphone</th>
-            <th>Adresse</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped align-middle">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nom</th>
+                                        <th>Prénom</th>
+                                        <th>Téléphone</th>
+                                        <th>Adresse</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
 
-    <tbody>
-        <?php $i = 1; ?>
-        <?php foreach ($clients as $cl): ?>
-        <tr>
-            <td><?= $cl['id'] ?></td>
-            <td><?= $cl['nom'] ?></td>
-            <td><?= $cl['prenom'] ?></td>
-            <td><?= $cl['telephone'] ?></td>
-            <td><?= $cl['adresse'] ?></td>
-            <td>
-                <a href="../vue/modifier_client.php?id=<?= $cl['id'] ?>" 
-                   class="btn-action btn-edit" title="Modifier">✏️Modifier</a>
+                                <tbody>
+                                    <?php if (count($fournisseurs) > 0): ?>
+                                        <?php 
+                                        $numero = 1; // Compteur pour numérotation séquentielle
+                                        foreach ($fournisseurs as $four): 
+                                        ?>
+                                        <tr>
+                                            <td><?= $numero++ ?></td>
+                                            <td><?= htmlspecialchars($four['nom']) ?></td>
+                                            <td><?= htmlspecialchars($four['prenom']) ?></td>
+                                            <td><?= htmlspecialchars($four['telephone']) ?></td>
+                                            <td><?= htmlspecialchars($four['adresse']) ?></td>
+                                            <td>
+                                                <a href="../vue/modifier_fournisseur.php?id=<?= $four['id'] ?>" 
+                                                   class="btn-action btn-edit" title="Modifier">
+                                                   ✏️ Modifier
+                                                </a>
 
-                <a href="supprimer_client.php?id=<?= $cl['id'] ?>" 
-                   class="btn-action btn-delete"
-                   onclick="return confirm('Supprimer ce client ?');">🗑️ </a>
-            </td>
-        </tr>
-        <?php endforeach; ?>
-    </tbody>
-</table>
-</div>
+                                                <a href="../vue/supprimer_fournisseur.php?id=<?= $four['id'] ?>" 
+                                                   class="btn-action btn-delete" title="Supprimer"
+                                                   onclick="return confirm('Voulez-vous vraiment supprimer ce fournisseur ?');">
+                                                   🗑️ Supprimer
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted">Aucun fournisseur enregistré</td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
 
+                            </table>
+                        </div>
 
                     </div>
                 </div>

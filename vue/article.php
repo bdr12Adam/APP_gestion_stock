@@ -850,3 +850,4 @@ select.input-style {
 
     </div>
 </section>
+<?php include "pied.php"; ?>

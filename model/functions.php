@@ -374,8 +374,473 @@ function modifierClient($id, $nom, $prenom, $telephone, $adresse) {
 }
 function supprimerClient($id) {
     global $conn;
-    $req = $conn->prepare("DELETE FROM client WHERE id = ?");
-    $req->bind_param("i", $id);
-    return $req->execute();
+
+    // Supprimer les ventes du client
+    $stmt1 = $conn->prepare("DELETE FROM vente WHERE id_client = ?");
+    $stmt1->bind_param("i", $id);
+    $stmt1->execute();
+    $stmt1->close();
+
+    // Supprimer le client
+    $stmt2 = $conn->prepare("DELETE FROM client WHERE id = ?");
+    $stmt2->bind_param("i", $id);
+    return $stmt2->execute();
+}
+ // ============================================
+// FONCTIONS POUR LA GESTION DES VENTES
+// VERSION CORRIGÉE
+// ============================================
+
+/**
+ * Récupérer toutes les ventes avec les détails des articles et clients
+ * @return array Liste des ventes
+ */
+function getVentes() {
+    global $conn;
+
+    // Requête simple qui récupère directement nom et prenom
+    $sql = "
+        SELECT 
+            v.id,
+            v.id_article,
+            v.id_client,
+            v.quantite,
+            v.prix,
+            v.date_vente,
+            a.nom_article,
+            a.categorie,
+            a.prix_unitaire,
+            c.nom,
+            c.prenom,
+            c.telephone,
+            c.adresse
+        FROM vente v
+        LEFT JOIN article a ON v.id_article = a.id
+        LEFT JOIN client c ON v.id_client = c.id
+        ORDER BY  v.id ASC
+    ";
+    
+    $result = $conn->query($sql);
+    $ventes = [];
+
+    if ($result && $result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $ventes[] = $row;
+        }
+    }
+
+    return $ventes;
+}
+
+/**
+ * Récupérer une vente par son ID
+ * @param int $id - ID de la vente
+ * @return array|null Vente ou null si non trouvée
+ */
+function getVenteById($id) {
+    global $conn;
+
+    $stmt = $conn->prepare("
+        SELECT 
+            v.*,
+            a.nom_article,
+            a.categorie,
+            c.nom,
+            c.prenom
+        FROM vente v
+        LEFT JOIN article a ON v.id_article = a.id
+        LEFT JOIN client c ON v.id_client = c.id
+        WHERE v.id = ?
+    ");
+    
+    if (!$stmt) {
+        return null;
+    }
+    
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+
+    $result = $stmt->get_result();
+    $vente = $result->fetch_assoc();
+
+    $stmt->close();
+
+    return $vente;
+}
+
+/**
+ * Ajouter une nouvelle vente
+ * @param int $id_article - ID de l'article
+ * @param int $id_client - ID du client
+ * @param int $quantite - Quantité vendue
+ * @return array Résultat avec succès et message
+ */
+function ajouterVente($id_article, $id_client, $quantite) {
+    global $conn;
+
+    // Vérifier si l'article existe
+    $article = getArticleById($id_article);
+    
+    if (!$article) {
+        return [
+            'success' => false,
+            'message' => '❌ Erreur : L\'article sélectionné n\'existe pas.'
+        ];
+    }
+
+    // Vérifier le stock disponible
+    if ($article['quantite'] < $quantite) {
+        return [
+            'success' => false,
+            'message' => '❌ Stock insuffisant ! Quantité disponible : ' . $article['quantite']
+        ];
+    }
+
+    // Calculer le prix total
+    $prix = $article['prix_unitaire'] * $quantite;
+    $date_vente = date('Y-m-d H:i:s');
+
+    // Insérer la vente
+    $stmt = $conn->prepare("
+        INSERT INTO vente 
+        (id_article, id_client, quantite, prix, date_vente)
+        VALUES (?, ?, ?, ?, ?)
+    ");
+
+    if (!$stmt) {
+        return [
+            'success' => false,
+            'message' => 'Erreur de préparation : ' . $conn->error
+        ];
+    }
+
+    $stmt->bind_param("iiids", $id_article, $id_client, $quantite, $prix, $date_vente);
+    
+    if ($stmt->execute()) {
+        // Mettre à jour le stock de l'article
+        $nouvelle_quantite = $article['quantite'] - $quantite;
+        $stmt_update = $conn->prepare("UPDATE article SET quantite = ? WHERE id = ?");
+        
+        if ($stmt_update) {
+            $stmt_update->bind_param("ii", $nouvelle_quantite, $id_article);
+            $stmt_update->execute();
+            $stmt_update->close();
+        }
+
+        $stmt->close();
+
+        return [
+            'success' => true,
+            'message' => '✅ Vente enregistrée avec succès ! Prix total : ' . number_format($prix, 2) . ' DH',
+            'prix_total' => $prix
+        ];
+    } else {
+        $stmt->close();
+        return [
+            'success' => false,
+            'message' => 'Erreur lors de l\'enregistrement : ' . $conn->error
+        ];
+    }
+}
+
+/**
+ * Supprimer une vente et restaurer le stock
+ * @param int $id - ID de la vente à supprimer
+ * @return array Résultat avec succès et message
+ */
+function supprimerVente($id) {
+    global $conn;
+
+    // Récupérer la vente avant de la supprimer
+    $vente = getVenteById($id);
+    
+    if (!$vente) {
+        return [
+            'success' => false,
+            'message' => '❌ Vente introuvable.'
+        ];
+    }
+
+    // Restaurer le stock de l'article
+    $stmt_restore = $conn->prepare("
+        UPDATE article 
+        SET quantite = quantite + ? 
+        WHERE id = ?
+    ");
+    
+    if ($stmt_restore) {
+        $stmt_restore->bind_param("ii", $vente['quantite'], $vente['id_article']);
+        $stmt_restore->execute();
+        $stmt_restore->close();
+    }
+
+    // Supprimer la vente
+    $stmt = $conn->prepare("DELETE FROM vente WHERE id = ?");
+    
+    if (!$stmt) {
+        return [
+            'success' => false,
+            'message' => 'Erreur de préparation : ' . $conn->error
+        ];
+    }
+    
+    $stmt->bind_param("i", $id);
+    $result = $stmt->execute();
+    $stmt->close();
+
+    if ($result) {
+        return [
+            'success' => true,
+            'message' => '✅ Vente supprimée et stock restauré avec succès.'
+        ];
+    } else {
+        return [
+            'success' => false,
+            'message' => 'Erreur lors de la suppression.'
+        ];
+    }
+}
+
+/**
+ * Récupérer les articles disponibles (stock > 0)
+ * @return array Liste des articles disponibles
+ */
+function getArticlesDisponibles() {
+    global $conn;
+
+    $sql = "SELECT * FROM article WHERE quantite > 0 ORDER BY nom_article ASC";
+    $result = $conn->query($sql);
+
+    $articles = [];
+    if ($result && $result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $articles[] = $row;
+        }
+    }
+
+    return $articles;
+}
+
+/**
+ * Récupérer les statistiques des ventes
+ * @return array Statistiques (total ventes, revenus, articles vendus)
+ */
+function getStatistiquesVentes() {
+    global $conn;
+
+    $stats = [];
+
+    // Nombre total de ventes
+    $result = $conn->query("SELECT COUNT(*) as total FROM vente");
+    if ($result) {
+        $row = $result->fetch_assoc();
+        $stats['nombre_ventes'] = $row['total'] ?? 0;
+    }
+
+    // Revenu total
+    $result = $conn->query("SELECT SUM(prix) as total FROM vente");
+    if ($result) {
+        $row = $result->fetch_assoc();
+        $stats['revenu_total'] = $row['total'] ?? 0;
+    }
+
+    // Quantité totale vendue
+    $result = $conn->query("SELECT SUM(quantite) as total FROM vente");
+    if ($result) {
+        $row = $result->fetch_assoc();
+        $stats['quantite_vendue'] = $row['total'] ?? 0;
+    }
+
+    // Article le plus vendu
+    $result = $conn->query("
+        SELECT a.nom_article, SUM(v.quantite) as total_vendu
+        FROM vente v
+        JOIN article a ON v.id_article = a.id
+        GROUP BY v.id_article
+        ORDER BY total_vendu DESC
+        LIMIT 1
+    ");
+    if ($result) {
+        $stats['article_plus_vendu'] = $result->fetch_assoc();
+    }
+
+    // Ventes du jour
+    $result = $conn->query("
+        SELECT COUNT(*) as nombre, SUM(prix) as total
+        FROM vente
+        WHERE DATE(date_vente) = CURDATE()
+    ");
+    if ($result) {
+        $row = $result->fetch_assoc();
+        $stats['ventes_aujourdhui'] = [
+            'nombre' => $row['nombre'] ?? 0,
+            'total' => $row['total'] ?? 0
+        ];
+    }
+
+    // Ventes du mois
+    $result = $conn->query("
+        SELECT COUNT(*) as nombre, SUM(prix) as total
+        FROM vente
+        WHERE MONTH(date_vente) = MONTH(CURDATE()) 
+        AND YEAR(date_vente) = YEAR(CURDATE())
+    ");
+    if ($result) {
+        $row = $result->fetch_assoc();
+        $stats['ventes_mois'] = [
+            'nombre' => $row['nombre'] ?? 0,
+            'total' => $row['total'] ?? 0
+        ];
+    }
+
+    return $stats;
+}
+
+/**
+ * Récupérer les ventes d'un client spécifique
+ * @param int $id_client - ID du client
+ * @return array Liste des ventes du client
+ */
+function getVentesByClient($id_client) {
+    global $conn;
+
+    $stmt = $conn->prepare("
+        SELECT 
+            v.*,
+            a.nom_article,
+            a.categorie
+        FROM vente v
+        LEFT JOIN article a ON v.id_article = a.id
+        WHERE v.id_client = ?
+        ORDER BY v.date_vente DESC
+    ");
+    
+    if (!$stmt) {
+        return [];
+    }
+    
+    $stmt->bind_param("i", $id_client);
+    $stmt->execute();
+
+    $result = $stmt->get_result();
+    $ventes = [];
+
+    if ($result && $result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $ventes[] = $row;
+        }
+    }
+
+    $stmt->close();
+
+    return $ventes;
+}
+
+/**
+ * Récupérer les ventes d'un article spécifique
+ * @param int $id_article - ID de l'article
+ * @return array Liste des ventes de l'article
+ */
+function getVentesByArticle($id_article) {
+    global $conn;
+
+    $stmt = $conn->prepare("
+        SELECT 
+            v.*,
+            c.nom,
+            c.prenom
+        FROM vente v
+        LEFT JOIN client c ON v.id_client = c.id
+        WHERE v.id_article = ?
+        ORDER BY v.date_vente DESC
+    ");
+    
+    if (!$stmt) {
+        return [];
+    }
+    
+    $stmt->bind_param("i", $id_article);
+    $stmt->execute();
+
+    $result = $stmt->get_result();
+    $ventes = [];
+
+    if ($result && $result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $ventes[] = $row;
+        }
+    }
+
+    $stmt->close();
+
+    return $ventes;
+}
+
+/**
+ * Récupérer les ventes par période
+ * @param string $date_debut - Date de début (Y-m-d)
+ * @param string $date_fin - Date de fin (Y-m-d)
+ * @return array Liste des ventes
+ */
+function getVentesByPeriode($date_debut, $date_fin) {
+    global $conn;
+
+    $stmt = $conn->prepare("
+        SELECT 
+            v.*,
+            a.nom_article,
+            c.nom,
+            c.prenom
+        FROM vente v
+        LEFT JOIN article a ON v.id_article = a.id
+        LEFT JOIN client c ON v.id_client = c.id
+        WHERE DATE(v.date_vente) BETWEEN ? AND ?
+        ORDER BY v.date_vente DESC
+    ");
+    
+    if (!$stmt) {
+        return [];
+    }
+    
+    $stmt->bind_param("ss", $date_debut, $date_fin);
+    $stmt->execute();
+
+    $result = $stmt->get_result();
+    $ventes = [];
+
+    if ($result && $result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $ventes[] = $row;
+        }
+    }
+
+    $stmt->close();
+
+    return $ventes;
+}
+
+/**
+ * Vérifier si une vente existe
+ * @param int $id - ID de la vente
+ * @return bool True si existe, false sinon
+ */
+function venteExiste($id) {
+    global $conn;
+
+    $stmt = $conn->prepare("SELECT id FROM vente WHERE id = ?");
+    
+    if (!$stmt) {
+        return false;
+    }
+    
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+
+    $result = $stmt->get_result();
+    $existe = $result->num_rows > 0;
+
+    $stmt->close();
+
+    return $existe;
 }
 ?>
