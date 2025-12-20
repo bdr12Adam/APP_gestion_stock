@@ -9,7 +9,7 @@ $total_commandes = $conn->query($sql_commandes)->fetch_assoc()['total'];
 $sql_ventes = "SELECT COUNT(*) as total FROM vente";
 $total_ventes = $conn->query($sql_ventes)->fetch_assoc()['total'];
 
-$sql_revenu = "SELECT SUM(prix) as total FROM vente";
+$sql_revenu = "SELECT SUM(prix_total) as total FROM vente";
 $revenu_total = $conn->query($sql_revenu)->fetch_assoc()['total'] ?? 0;
 
 $sql_cout = "SELECT SUM(quantite * prix) as total FROM commande";
@@ -42,7 +42,7 @@ $ventes_recentes = $conn->query($sql_ventes_recentes);
 
 // ========== TOP PRODUITS ==========
 $sql_top_articles = "
-    SELECT a.nom_article, SUM(v.quantite) as total_vendu, SUM(v.prix) as ca
+    SELECT a.nom_article, SUM(v.quantite) as total_vendu, SUM(v.prix_total) as ca
     FROM vente v
     LEFT JOIN article a ON v.id_article = a.id
     GROUP BY v.id_article
@@ -51,7 +51,7 @@ $sql_top_articles = "
 ";
 $top_articles = $conn->query($sql_top_articles);
 
-// ========== STOCK FAIBLE ==========
+// ========== STOCK FAIBLE (< 10) ==========
 $sql_stock_faible = "
     SELECT nom_article, quantite
     FROM article
@@ -60,6 +60,16 @@ $sql_stock_faible = "
     LIMIT 5
 ";
 $stock_faible = $conn->query($sql_stock_faible);
+
+// ========== RUPTURE DE STOCK (= 0) ==========
+$sql_rupture_stock = "
+    SELECT nom_article, quantite
+    FROM article
+    WHERE quantite = 0
+    ORDER BY nom_article ASC
+    LIMIT 5
+";
+$rupture_stock = $conn->query($sql_rupture_stock);
 ?>
 
 <style>
@@ -296,7 +306,7 @@ $stock_faible = $conn->query($sql_stock_faible);
 }
 
 /* ============================================
-   ALERTE STOCK
+   ALERTE STOCK FAIBLE
 ============================================ */
 .alert-stock {
     background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
@@ -349,6 +359,47 @@ $stock_faible = $conn->query($sql_stock_faible);
     border-radius: 20px;
     font-size: 12px;
     font-weight: bold;
+}
+
+/* ============================================
+   ALERTE RUPTURE DE STOCK (NOUVEAU)
+============================================ */
+.alert-rupture {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    padding: 20px;
+    border-radius: 20px;
+    margin-bottom: 25px;
+    border-left: 5px solid #dc2626;
+    animation: shake 3s infinite;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.alert-rupture .alert-title {
+    color: #7f1d1d;
+}
+
+.alert-rupture .alert-item {
+    background: white;
+    border-left: 3px solid #dc2626;
+}
+
+.alert-rupture .alert-product {
+    color: #991b1b;
+}
+
+.alert-rupture .alert-badge {
+    background: #dc2626;
+    animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+    0%, 50%, 100% { opacity: 1; }
+    25%, 75% { opacity: 0.5; }
 }
 
 /* ============================================
@@ -475,6 +526,24 @@ $stock_faible = $conn->query($sql_stock_faible);
         </div>
     </div>
 
+    <!-- 🚨 ALERTE RUPTURE DE STOCK (NOUVEAU) -->
+    <?php if ($rupture_stock && $rupture_stock->num_rows > 0): ?>
+    <div class="alert-rupture">
+        <div class="alert-title">
+            <span>🚨</span>
+            <span>URGENT ! Rupture de Stock</span>
+        </div>
+        <?php while ($item = $rupture_stock->fetch_assoc()): ?>
+        <div class="alert-item">
+            <div>
+                <div class="alert-product">❌ <?= htmlspecialchars($item['nom_article']) ?></div>
+            </div>
+            <span class="alert-badge">ÉPUISÉ</span>
+        </div>
+        <?php endwhile; ?>
+    </div>
+    <?php endif; ?>
+
     <!-- ⚠️ ALERTE STOCK FAIBLE -->
     <?php if ($stock_faible && $stock_faible->num_rows > 0): ?>
     <div class="alert-stock">
@@ -515,7 +584,7 @@ $stock_faible = $conn->query($sql_stock_faible);
                         </div>
                     </div>
                     <div class="vente-prix">
-                        <?= number_format($vente['prix'], 2) ?> DH
+                        <?= number_format($vente['prix_total'], 2) ?> DH
                     </div>
                 </div>
                 <?php endwhile; ?>
