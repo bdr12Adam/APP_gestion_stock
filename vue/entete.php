@@ -1,4 +1,13 @@
 <?php
+// Démarrer la session
+session_start();
+
+// Vérifier si l'utilisateur est connecté
+if (!isset($_SESSION['user_id'])) {
+    header("Location:  ../vue/utilisateur.php");
+    exit();
+}
+
 // Déterminer le titre de la page en fonction du fichier actuel
 $current_page = basename($_SERVER['PHP_SELF'], '.php');
 
@@ -14,9 +23,18 @@ $page_titles = [
     'modifier_article' => 'Modifier Article',
     'modifier_fournisseur' => 'Modifier Fournisseur',
     'modifier_commande' => 'Modifier Commande',
+    'analyse' => 'Analyses & Statistiques',
+    'stock' => 'Gestion de Stock',
+    'utilisateur' => 'Gestion des Utilisateurs',
 ];
 
 $page_title = isset($page_titles[$current_page]) ? $page_titles[$current_page] : 'Dashboard';
+
+// Récupérer les informations de l'utilisateur
+$user_nom = $_SESSION['user_nom'] ?? 'Utilisateur';
+$user_prenom = $_SESSION['user_prenom'] ?? '';
+$user_role = $_SESSION['user_role'] ?? 'user';
+$user_initiale = strtoupper(substr($user_prenom, 0, 1));
 ?>
 
 <!DOCTYPE html>
@@ -44,6 +62,136 @@ $page_title = isset($page_titles[$current_page]) ? $page_titles[$current_page] :
       
       .nav-links li a.active .links_name {
         color: #fff;
+      }
+
+      /* Style amélioré pour le profil */
+      .profile-details {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 15px;
+        border-radius: 12px;
+        background: #f8fafc;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+
+      .profile-details:hover {
+        background: #e2e8f0;
+      }
+
+      .profile-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 16px;
+      }
+
+      .profile-info {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .admin_name {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 14px;
+      }
+
+      .admin_role {
+        font-size: 11px;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .role-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .role-admin {
+        background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+        color: white;
+      }
+
+      .role-manager {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+
+      .role-user {
+        background: #d1fae5;
+        color: #065f46;
+      }
+
+      /* Dropdown menu profil */
+      .profile-dropdown {
+        position: absolute;
+        top: 70px;
+        right: 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        padding: 10px;
+        min-width: 200px;
+        display: none;
+        z-index: 1000;
+      }
+
+      .profile-dropdown.active {
+        display: block;
+        animation: slideDown 0.3s ease;
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .dropdown-item {
+        padding: 10px 15px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        color: #334155;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+      }
+
+      .dropdown-item:hover {
+        background: #f8fafc;
+      }
+
+      .dropdown-item i {
+        font-size: 18px;
+        color: #667eea;
+      }
+
+      .dropdown-divider {
+        height: 1px;
+        background: #e2e8f0;
+        margin: 8px 0;
       }
     </style>
   </head>
@@ -84,34 +232,24 @@ $page_title = isset($page_titles[$current_page]) ? $page_titles[$current_page] :
             <span class="links_name">Fournisseur</span>
           </a>
         </li>
+       
         <li>
-          <a href="../vue/commande.php" class="<?= $current_page == 'commande' || $current_page == 'modifier_commande' ? 'active' : '' ?>">
-            <i class="bx bx-list-ul"></i>
-            <span class="links_name">Commandes</span>
-          </a>
-        </li>
-        <li>
-          <a href="#">
+          <a href="../vue/analyse.php" class="<?= $current_page == 'analyse' ? 'active' : '' ?>">
             <i class="bx bx-pie-chart-alt-2"></i>
             <span class="links_name">Analyses</span>
           </a>
         </li>
         <li>
-          <a href="#">
+          <a href="../vue/stock.php" class="<?= $current_page == 'stock' ? 'active' : '' ?>">
             <i class="bx bx-coin-stack"></i>
             <span class="links_name">Stock</span>
           </a>
         </li>
+        
         <li>
-          <a href="#">
-            <i class="bx bx-book-alt"></i>
-            <span class="links_name">Toutes les commandes</span>
-          </a>
-        </li>
-        <li>
-          <a href="#">
+          <a href="../vue/gestion_utilisateur.php" class="<?= $current_page == 'utilisateur' ? 'active' : '' ?>">
             <i class="bx bx-user"></i>
-            <span class="links_name">Utilisateur</span>
+            <span class="links_name">Utilisateurs</span>
           </a>
         </li>
         <li>
@@ -121,7 +259,7 @@ $page_title = isset($page_titles[$current_page]) ? $page_titles[$current_page] :
           </a>
         </li>
         <li class="log_out">
-          <a href="#">
+          <a href="../vue/logout.php">
             <i class="bx bx-log-out"></i>
             <span class="links_name">Déconnexion</span>
           </a>
@@ -138,14 +276,37 @@ $page_title = isset($page_titles[$current_page]) ? $page_titles[$current_page] :
           <input type="text" placeholder="Recherche..." />
           <i class="bx bx-search"></i>
         </div>
-        <div class="profile-details">
-          <!--<img src="images/profile.jpg" alt="">-->
-          <span class="admin_name">Komche</span>
+        <div class="profile-details" id="profileToggle">
+          <div class="profile-avatar"><?= $user_initiale ?></div>
+          <div class="profile-info">
+            <span class="admin_name"><?= htmlspecialchars($user_prenom . ' ' . $user_nom) ?></span>
+            <span class="role-badge role-<?= $user_role ?>">
+              <?= $user_role == 'admin' ? '🛡️ Admin' : ($user_role == 'manager' ? '👔 Manager' : '👤 User') ?>
+            </span>
+          </div>
           <i class="bx bx-chevron-down"></i>
+        </div>
+
+        <!-- Dropdown Menu -->
+        <div class="profile-dropdown" id="profileDropdown">
+          <a href="../vue/utilisateur.php?modifier=<?= $_SESSION['user_id'] ?>" class="dropdown-item">
+            <i class='bx bx-user'></i>
+            <span>Mon Profil</span>
+          </a>
+          <a href="#" class="dropdown-item">
+            <i class='bx bx-cog'></i>
+            <span>Paramètres</span>
+          </a>
+          <div class="dropdown-divider"></div>
+          <a href="../vue/logout.php" class="dropdown-item">
+            <i class='bx bx-log-out'></i>
+            <span>Déconnexion</span>
+          </a>
         </div>
       </nav>
 
     <script>
+      // Toggle sidebar
       let sidebar = document.querySelector(".sidebar");
       let sidebarBtn = document.querySelector(".sidebarBtn");
       sidebarBtn.onclick = function() {
@@ -155,4 +316,20 @@ $page_title = isset($page_titles[$current_page]) ? $page_titles[$current_page] :
         }else
           sidebarBtn.classList.replace("bx-menu-alt-right", "bx-menu");
       }
+
+      // Toggle profile dropdown
+      const profileToggle = document.getElementById('profileToggle');
+      const profileDropdown = document.getElementById('profileDropdown');
+
+      profileToggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        profileDropdown.classList.toggle('active');
+      });
+
+      // Fermer le dropdown quand on clique ailleurs
+      document.addEventListener('click', function(e) {
+        if (!profileToggle.contains(e.target) && !profileDropdown.contains(e.target)) {
+          profileDropdown.classList.remove('active');
+        }
+      });
     </script>

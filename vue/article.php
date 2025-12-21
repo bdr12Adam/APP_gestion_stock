@@ -7,7 +7,7 @@ $message = "";
 $typeMessage = "";
 
 // ----- TRAITEMENT FORMULAIRE -----
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom_article'])) {
 
     if (
         empty($_POST["nom_article"]) ||
@@ -50,8 +50,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ----- RÉCUPÉRATION DES ARTICLES -----
-$articles = getArticles();
+// ----- TRAITEMENT RECHERCHE -----
+$searchTerm = "";
+if (isset($_GET['search'])) {
+    $searchTerm = trim($_GET['search']);
+}
+
+// ----- RÉCUPÉRATION DES ARTICLES (avec recherche) -----
+if (!empty($searchTerm)) {
+    // Recherche dans la base de données
+    $search = "%{$searchTerm}%";
+    $req = $conn->prepare("
+        SELECT * FROM article 
+        WHERE nom_article LIKE ? 
+        OR categorie LIKE ? 
+        OR CAST(id AS CHAR) LIKE ?
+        ORDER BY id DESC
+    ");
+    $req->bind_param("sss", $search, $search, $search);
+    $req->execute();
+    $result = $req->get_result();
+    $articles = $result->fetch_all(MYSQLI_ASSOC);
+    $req->close();
+} else {
+    // Récupération normale de tous les articles
+    $articles = getArticles();
+}
 
 ?>
 
@@ -67,6 +91,143 @@ $articles = getArticles();
     align-items: flex-start;
     margin-top: 20px;
     padding: 0 15px;
+}
+
+/* ==========================
+   BARRE DE RECHERCHE MODERNE
+   ========================== */
+
+.search-container {
+    margin-bottom: 20px;
+    animation: slideInDown 0.5s ease-out;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 14px 50px 14px 20px;
+    border: 2px solid #e2e8f0;
+    border-radius: 50px;
+    font-size: 15px;
+    color: #2d3748;
+    background-color: #f7fafc;
+    outline: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.search-box input:focus {
+    background-color: #ffffff;
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1), 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.search-box input::placeholder {
+    color: #a0aec0;
+}
+
+.search-box .search-icon {
+    position: absolute;
+    right: 18px;
+    font-size: 20px;
+    color: #667eea;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.search-box .search-icon:hover {
+    color: #764ba2;
+    transform: scale(1.15);
+}
+
+/* Bouton de réinitialisation */
+.reset-search {
+    position: absolute;
+    right: 50px;
+    font-size: 18px;
+    color: #a0aec0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: none;
+}
+
+.reset-search.active {
+    display: block;
+}
+
+.reset-search:hover {
+    color: #ef4444;
+    transform: scale(1.2);
+}
+
+/* Badge de résultats */
+.search-results-badge {
+    text-align: center;
+    margin-top: 15px;
+    padding: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    animation: slideInUp 0.4s ease-out;
+}
+
+.search-results-badge .clear-link {
+    color: white;
+    text-decoration: underline;
+    margin-left: 10px;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.search-results-badge .clear-link:hover {
+    color: #ffd700;
+}
+
+/* Message "Aucun résultat" */
+.no-results {
+    text-align: center;
+    padding: 40px 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    margin-top: 20px;
+}
+
+.no-results i {
+    font-size: 60px;
+    color: #cbd5e0;
+    margin-bottom: 15px;
+}
+
+.no-results h5 {
+    color: #4a5568;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.no-results p {
+    color: #a0aec0;
+    font-size: 14px;
 }
 
 /* ==========================
@@ -252,7 +413,7 @@ select.input-style {
 
 .table-box {
     flex: 2;
-    min-width: 0; /* Important pour flexbox */
+    min-width: 0;
     width: 100%;
 }
 
@@ -295,12 +456,12 @@ select.input-style {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-/* Style du tableau - Optimisé pour afficher toutes les colonnes */
+/* Style du tableau */
 .table {
     margin-bottom: 0;
     border-collapse: collapse;
     width: 100%;
-    min-width: 900px; /* Largeur minimale pour garantir l'affichage complet */
+    min-width: 900px;
 }
 
 /* Header du tableau */
@@ -323,7 +484,7 @@ select.input-style {
     z-index: 10;
 }
 
-/* Corps du tableau - Colonnes optimisées */
+/* Corps du tableau */
 .table tbody td {
     padding: 14px 12px;
     font-size: 14px;
@@ -337,7 +498,7 @@ select.input-style {
     white-space: nowrap;
 }
 
-/* Colonne Actions - Largeur fixe */
+/* Colonne Actions */
 .table tbody td:last-child {
     min-width: 180px;
     max-width: 200px;
@@ -366,11 +527,25 @@ select.input-style {
     z-index: 1;
 }
 
+/* Highlight pour résultats de recherche */
+.table tbody tr.highlight {
+    background-color: #fff3cd !important;
+    animation: highlightFade 2s ease-out;
+}
+
+@keyframes highlightFade {
+    0% {
+        background-color: #ffd700;
+    }
+    100% {
+        background-color: #fff3cd;
+    }
+}
+
 /* ==========================
-   BOUTONS D'ACTION OPTIMISÉS
+   BOUTONS D'ACTION
    ========================== */
 
-/* Conteneur des boutons d'action */
 .action-buttons {
     display: flex;
     gap: 8px;
@@ -379,7 +554,6 @@ select.input-style {
     flex-wrap: wrap;
 }
 
-/* Boutons d'action modernes */
 .btn-action {
     display: inline-flex;
     align-items: center;
@@ -397,7 +571,6 @@ select.input-style {
     min-width: 80px;
 }
 
-/* Bouton Modifier - Style principal */
 .btn-edit {
     background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
     color: white;
@@ -409,7 +582,6 @@ select.input-style {
     box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
 }
 
-/* Bouton Supprimer - Style principal */
 .btn-delete {
     background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
     color: white;
@@ -421,50 +593,8 @@ select.input-style {
     box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
 }
 
-/* Style compact pour les boutons (utilisé dans le tableau) */
-.btn-action-compact {
-    padding: 6px 12px;
-    font-size: 12px;
-    min-width: 70px;
-    gap: 4px;
-}
-
-/* Boutons circulaires pour les icônes */
-.btn-action-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.btn-edit-icon {
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    color: white;
-}
-
-.btn-edit-icon:hover {
-    transform: translateY(-3px) rotate(5deg);
-    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
-}
-
-.btn-delete-icon {
-    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
-    color: white;
-}
-
-.btn-delete-icon:hover {
-    transform: translateY(-3px) rotate(-5deg);
-    box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
-}
-
 /* ==========================
-   RESPONSIVE DESIGN AMÉLIORÉ
+   RESPONSIVE DESIGN
    ========================== */
 
 @media (max-width: 1200px) {
@@ -482,251 +612,40 @@ select.input-style {
     .table-box {
         width: 100%;
     }
-    
-    .table-box .card {
-        padding: 20px;
-    }
-}
-
-@media (max-width: 992px) {
-    .table-responsive {
-        border-radius: 10px;
-    }
-    
-    .table-dark th {
-        padding: 12px 8px;
-        font-size: 12px;
-    }
-    
-    .table tbody td {
-        padding: 12px 8px;
-        font-size: 13px;
-    }
-    
-    .btn-action {
-        padding: 7px 12px;
-        font-size: 12px;
-        min-width: 75px;
-    }
-    
-    .btn-action-icon {
-        width: 32px;
-        height: 32px;
-        font-size: 14px;
-    }
 }
 
 @media (max-width: 768px) {
+    .search-box {
+        max-width: 100%;
+    }
+    
+    .search-box input {
+        padding: 12px 45px 12px 16px;
+        font-size: 14px;
+    }
+    
     .flex-container {
         padding: 0 10px;
         gap: 20px;
     }
     
-    .form-box .card,
-    .table-box .card {
-        padding: 20px 15px;
-        border-radius: 16px;
-    }
-    
-    .form-box h4 {
-        font-size: 18px;
-    }
-    
     .table-box h4 {
         font-size: 18px;
-    }
-    
-    .input-style {
-        padding: 10px 12px;
-        font-size: 14px;
-    }
-    
-    .form-box .btn-primary {
-        padding: 12px 0;
-        font-size: 14px;
-    }
-    
-    /* Optimisation pour mobile - Actions en colonne */
-    .table tbody td:last-child {
-        min-width: 150px;
-    }
-    
-    .action-buttons {
-        gap: 6px;
-    }
-    
-    .btn-action {
-        padding: 6px 10px;
-        font-size: 11px;
-        min-width: 65px;
-        gap: 4px;
     }
 }
 
 @media (max-width: 576px) {
-    .flex-container {
-        padding: 0 8px;
-        gap: 15px;
+    .search-box input {
+        padding: 10px 40px 10px 14px;
+        font-size: 13px;
     }
     
-    .form-box .card,
-    .table-box .card {
-        padding: 18px 12px;
-    }
-    
-    .table-box h4 {
-        font-size: 16px;
-        margin-bottom: 15px;
-    }
-    
-    /* Adaptation des boutons sur très petits écrans */
-    .action-buttons {
-        flex-direction: column;
-        gap: 5px;
-        align-items: stretch;
-    }
-    
-    .btn-action {
-        width: 100%;
-        min-width: auto;
-        padding: 8px;
-        font-size: 11px;
-    }
-    
-    /* Alternative: boutons icônes seulement sur mobile */
-    .btn-mobile-icon {
-        padding: 8px;
-        min-width: auto;
-        width: 40px;
-        justify-content: center;
-    }
-    
-    .btn-mobile-icon span {
-        display: none;
-    }
-    
-    .btn-mobile-icon::before {
-        content: attr(data-icon);
-        font-size: 14px;
+    .search-box .search-icon {
+        right: 12px;
+        font-size: 18px;
     }
 }
-
-/* ==========================
-   ANIMATIONS SUPPLÉMENTAIRES
-   ========================== */
-
-/* Effet de pulsation sur le bouton */
-@keyframes pulse {
-    0%, 100% {
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.35);
-    }
-    50% {
-        box-shadow: 0 4px 25px rgba(102, 126, 234, 0.55);
-    }
-}
-
-.form-box .btn-primary {
-    animation: pulse 2s infinite;
-}
-
-.form-box .btn-primary:hover {
-    animation: none;
-}
-
-/* Effet fade-in sur les éléments du tableau */
-.table tbody tr {
-    animation: fadeIn 0.5s ease-out backwards;
-}
-
-.table tbody tr:nth-child(1) { animation-delay: 0.1s; }
-.table tbody tr:nth-child(2) { animation-delay: 0.15s; }
-.table tbody tr:nth-child(3) { animation-delay: 0.2s; }
-.table tbody tr:nth-child(4) { animation-delay: 0.25s; }
-.table tbody tr:nth-child(5) { animation-delay: 0.3s; }
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Animation sur les boutons d'action */
-@keyframes buttonPulse {
-    0%, 100% {
-        transform: translateY(-3px) scale(1);
-    }
-    50% {
-        transform: translateY(-3px) scale(1.05);
-    }
-}
-
-.btn-action:hover {
-    animation: buttonPulse 0.6s ease;
-}
-
-/* ==========================
-   STYLES ALTERNATIFS POUR BOUTONS
-   ========================== */
-
-/* Style outline */
-.btn-outline {
-    background: transparent;
-    border: 2px solid;
-}
-
-.btn-outline-edit {
-    border-color: #3b82f6;
-    color: #3b82f6;
-}
-
-.btn-outline-edit:hover {
-    background: #3b82f6;
-    color: white;
-}
-
-.btn-outline-delete {
-    border-color: #ef4444;
-    color: #ef4444;
-}
-
-.btn-outline-delete:hover {
-    background: #ef4444;
-    color: white;
-}
-
-/* Style pastel */
-.btn-pastel {
-    border: none;
-}
-
-.btn-pastel-edit {
-    background: #dbeafe;
-    color: #1e40af;
-}
-
-.btn-pastel-edit:hover {
-    background: #3b82f6;
-    color: white;
-}
-
-.btn-pastel-delete {
-    background: #fee2e2;
-    color: #991b1b;
-}
-
-.btn-pastel-delete:hover {
-    background: #ef4444;
-    color: white;
-}
-
-
 </style>
-
 
 <!-- **************  CONTENU ************** -->
 <section class="home-section">
@@ -739,7 +658,7 @@ select.input-style {
                 <div class="card shadow-sm">
                     <div class="card-body">
 
-                        <h4 class="mb-4 text-center fw-bold">+Ajouter un article</h4>
+                        <h4 class="mb-4 text-center fw-bold">+ Ajouter un article</h4>
 
                         <form action="" method="post">
 
@@ -755,6 +674,7 @@ select.input-style {
                                     <option value="Ordinateur">Ordinateur</option>
                                     <option value="Imprimante">Imprimante</option>
                                     <option value="Accessoire">Accessoire</option>
+
                                 </select>
                             </div>
 
@@ -781,10 +701,10 @@ select.input-style {
                             <button class="btn btn-primary w-100">Enregistrer</button>
 
                             <?php if ($message): ?>
-    <div class="alert alert-<?= $typeMessage ?> mt-3 text-center fw-bold">
-        <?= $message ?>
-    </div>
-<?php endif; ?>
+                            <div class="alert alert-<?= $typeMessage ?> mt-3 text-center fw-bold">
+                                <?= $message ?>
+                            </div>
+                            <?php endif; ?>
 
                         </form>
 
@@ -796,9 +716,37 @@ select.input-style {
             <div class="table-box">
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <h4 class="fw-bold mb-3"> 📊Liste des articles</h4>
+                        <h4 class="fw-bold mb-3">📊 Liste des articles</h4>
+
+                        <!-- BARRE DE RECHERCHE -->
+                        <div class="search-container">
+                            <form action="" method="get" id="searchForm">
+                                <div class="search-box">
+                                    <input 
+                                        type="text" 
+                                        name="search" 
+                                        id="searchInput"
+                                        placeholder="🔍 Rechercher par nom, catégorie ou ID..." 
+                                        value="<?= htmlspecialchars($searchTerm) ?>"
+                                        autocomplete="off"
+                                    />
+                                    <i class='bx bx-x reset-search <?= !empty($searchTerm) ? "active" : "" ?>' 
+                                       id="resetSearch" 
+                                       title="Effacer"></i>
+                                    <i class='bx bx-search search-icon' onclick="document.getElementById('searchForm').submit()"></i>
+                                </div>
+                            </form>
+
+                            <?php if (!empty($searchTerm)): ?>
+                            <div class="search-results-badge">
+                                <?= count($articles) ?> résultat(s) trouvé(s) pour "<?= htmlspecialchars($searchTerm) ?>"
+                                <a href="?" class="clear-link">Afficher tout</a>
+                            </div>
+                            <?php endif; ?>
+                        </div>
 
                         <div class="table-responsive">
+                            <?php if (count($articles) > 0): ?>
                             <table class="table table-bordered table-striped align-middle">
                                 <thead class="table-dark">
                                     <tr>
@@ -817,29 +765,36 @@ select.input-style {
                                     <?php foreach ($articles as $art): ?>
                                     <tr>
                                         <td><?= $art['id'] ?></td>
-                                        <td><?= $art['nom_article'] ?></td>
-                                        <td><?= $art['categorie'] ?></td>
+                                        <td><?= htmlspecialchars($art['nom_article']) ?></td>
+                                        <td><?= htmlspecialchars($art['categorie']) ?></td>
                                         <td><?= $art['quantite'] ?></td>
-                                        <td><?= $art['prix_unitaire'] ?></td>
+                                        <td><?= number_format($art['prix_unitaire'], 2) ?> DH</td>
                                         <td><?= date('d/m/Y H:i', strtotime($art['date_fabrication'])) ?></td>
                                         <td><?= date('d/m/Y H:i', strtotime($art['date_expiration'])) ?></td>
                                         <td>
-    <a href="modifier_article.php?id=<?= $art['id'] ?>" 
-       class="btn-action btn-edit" title="Modifier">
-       ✏️
-    </a>
+                                            <a href="modifier_article.php?id=<?= $art['id'] ?>" 
+                                               class="btn-action btn-edit" title="Modifier">
+                                               ✏️
+                                            </a>
 
-    <a href="../vue/supprimer_article.php?id=<?= $art['id'] ?>" 
-       class="btn-action btn-delete" title="Supprimer"
-       onclick="return confirm('Voulez-vous vraiment supprimer cet article ?');">
-       🗑️
-    </a>
-</td>
+                                            <a href="../vue/supprimer_article.php?id=<?= $art['id'] ?>" 
+                                               class="btn-action btn-delete" title="Supprimer"
+                                               onclick="return confirm('Voulez-vous vraiment supprimer cet article ?');">
+                                               🗑️
+                                            </a>
+                                        </td>
                                     </tr>
                                     <?php endforeach; ?>
                                 </tbody>
-
                             </table>
+                            <?php else: ?>
+                            <div class="no-results">
+                                <i class='bx bx-search-alt'></i>
+                                <h5>Aucun résultat trouvé</h5>
+                                <p>Aucun article ne correspond à votre recherche "<?= htmlspecialchars($searchTerm) ?>"</p>
+                                <a href="?" class="btn btn-primary mt-3">Afficher tous les articles</a>
+                            </div>
+                            <?php endif; ?>
                         </div>
 
                     </div>
@@ -850,4 +805,48 @@ select.input-style {
 
     </div>
 </section>
+
+<!-- SCRIPT JAVASCRIPT POUR LA RECHERCHE -->
+<script>
+    // Recherche en temps réel (optionnel)
+    const searchInput = document.getElementById('searchInput');
+    const resetSearch = document.getElementById('resetSearch');
+    const searchForm = document.getElementById('searchForm');
+
+    // Soumission automatique après une pause de frappe
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        
+        // Afficher/masquer le bouton reset
+        if (this.value.length > 0) {
+            resetSearch.classList.add('active');
+        } else {
+            resetSearch.classList.remove('active');
+        }
+        
+        // Recherche automatique après 500ms d'inactivité
+        searchTimeout = setTimeout(() => {
+            if (this.value.length >= 2 || this.value.length === 0) {
+                searchForm.submit();
+            }
+        }, 500);
+    });
+
+    // Bouton reset
+    resetSearch.addEventListener('click', function() {
+        searchInput.value = '';
+        this.classList.remove('active');
+        window.location.href = '?';
+    });
+
+    // Soumettre avec Enter
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            searchForm.submit();
+        }
+    });
+</script>
+
 <?php include "pied.php"; ?>
