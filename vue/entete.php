@@ -253,7 +253,7 @@ $user_initiale = strtoupper(substr($user_prenom, 0, 1));
           </a>
         </li>
         <li>
-          <a href="#">
+          <a href="../vue/configuratin.php">
             <i class="bx bx-cog"></i>
             <span class="links_name">Configuration</span>
           </a>
@@ -281,7 +281,7 @@ $user_initiale = strtoupper(substr($user_prenom, 0, 1));
           <div class="profile-info">
             <span class="admin_name"><?= htmlspecialchars($user_prenom . ' ' . $user_nom) ?></span>
             <span class="role-badge role-<?= $user_role ?>">
-              <?= $user_role == 'admin' ? '🛡️ Admin' : ($user_role == 'manager' ? '👔 Manager' : '👤 User') ?>
+              <?= $user_role == 'admin' ? '🧑‍💻 Admin' : ($user_role == 'manager' ? '👔 Manager' : '👤 User') ?>
             </span>
           </div>
           <i class="bx bx-chevron-down"></i>
@@ -293,7 +293,7 @@ $user_initiale = strtoupper(substr($user_prenom, 0, 1));
             <i class='bx bx-user'></i>
             <span>Mon Profil</span>
           </a>
-          <a href="#" class="dropdown-item">
+          <a href="../vue/configuratin.php" class="dropdown-item">
             <i class='bx bx-cog'></i>
             <span>Paramètres</span>
           </a>

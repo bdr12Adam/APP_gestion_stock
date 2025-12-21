@@ -761,31 +761,31 @@ select.input-style {
                                     </tr>
                                 </thead>
 
-                                <tbody>
-                                    <?php foreach ($articles as $art): ?>
-                                    <tr>
-                                        <td><?= $art['id'] ?></td>
-                                        <td><?= htmlspecialchars($art['nom_article']) ?></td>
-                                        <td><?= htmlspecialchars($art['categorie']) ?></td>
-                                        <td><?= $art['quantite'] ?></td>
-                                        <td><?= number_format($art['prix_unitaire'], 2) ?> DH</td>
-                                        <td><?= date('d/m/Y H:i', strtotime($art['date_fabrication'])) ?></td>
-                                        <td><?= date('d/m/Y H:i', strtotime($art['date_expiration'])) ?></td>
-                                        <td>
-                                            <a href="modifier_article.php?id=<?= $art['id'] ?>" 
-                                               class="btn-action btn-edit" title="Modifier">
-                                               ✏️
-                                            </a>
+                               <tbody>
+    <?php $i = 1; ?>
+    <?php foreach ($articles as $art): ?>
+    <tr>
+        <td><?= $i++ ?></td> <!-- compteur -->
+        <td><?= htmlspecialchars($art['nom_article']) ?></td>
+        <td><?= htmlspecialchars($art['categorie']) ?></td>
+        <td><?= $art['quantite'] ?></td>
+        <td><?= number_format($art['prix_unitaire'], 2) ?> DH</td>
+        <td><?= date('d/m/Y H:i', strtotime($art['date_fabrication'])) ?></td>
+        <td><?= date('d/m/Y H:i', strtotime($art['date_expiration'])) ?></td>
+        <td>
+            <a href="modifier_article.php?id=<?= $art['id'] ?>" 
+               class="btn-action btn-edit" title="Modifier">✏️</a>
 
-                                            <a href="../vue/supprimer_article.php?id=<?= $art['id'] ?>" 
-                                               class="btn-action btn-delete" title="Supprimer"
-                                               onclick="return confirm('Voulez-vous vraiment supprimer cet article ?');">
-                                               🗑️
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
+            <a href="../vue/supprimer_article.php?id=<?= $art['id'] ?>" 
+               class="btn-action btn-delete" title="Supprimer"
+               onclick="return confirm('Voulez-vous vraiment supprimer cet article ?');">
+               🗑️
+            </a>
+        </td>
+    </tr>
+    <?php endforeach; ?>
+</tbody>
+
                             </table>
                             <?php else: ?>
                             <div class="no-results">

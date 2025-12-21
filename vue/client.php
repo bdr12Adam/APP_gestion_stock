@@ -789,26 +789,27 @@ select.input-style {
         </tr>
     </thead>
 
-    <tbody>
-        <?php $i = 1; ?>
-        <?php foreach ($clients as $cl): ?>
-        <tr>
-            <td><?= $cl['id'] ?></td>
-            <td><?= $cl['nom'] ?></td>
-            <td><?= $cl['prenom'] ?></td>
-            <td><?= $cl['telephone'] ?></td>
-            <td><?= $cl['adresse'] ?></td>
-            <td>
-                <a href="../vue/modifier_client.php?id=<?= $cl['id'] ?>" 
-                   class="btn-action btn-edit" title="Modifier">✏️Modifier</a>
+<tbody>
+    <?php $i = 1; ?>
+    <?php foreach ($clients as $cl): ?>
+    <tr>
+        <td><?= $i++ ?></td> <!-- compteur -->
+        <td><?= $cl['nom'] ?></td>
+        <td><?= $cl['prenom'] ?></td>
+        <td><?= $cl['telephone'] ?></td>
+        <td><?= $cl['adresse'] ?></td>
+        <td>
+            <a href="../vue/modifier_client.php?id=<?= $cl['id'] ?>" 
+               class="btn-action btn-edit" title="Modifier">✏️Modifier</a>
 
-                <a href="supprimer_client.php?id=<?= $cl['id'] ?>" 
-                   class="btn-action btn-delete"
-                   onclick="return confirm('Supprimer ce client ?');">🗑️ </a>
-            </td>
-        </tr>
-        <?php endforeach; ?>
-    </tbody>
+            <a href="supprimer_client.php?id=<?= $cl['id'] ?>" 
+               class="btn-action btn-delete"
+               onclick="return confirm('Supprimer ce client ?');">🗑️</a>
+        </td>
+    </tr>
+    <?php endforeach; ?>
+</tbody>
+
 </table>
 </div>
 

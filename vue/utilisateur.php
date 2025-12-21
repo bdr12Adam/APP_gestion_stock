@@ -543,8 +543,8 @@ $password = password_hash("adambendraoui2006", PASSWORD_BCRYPT);
 
             <div class="demo-credentials">
                 <h4><i class='bx bx-info-circle'></i> Compte de démonstration</h4>
-                <p><strong>Email:</strong> <code>adamebdr02@gmail.com</code></p>
-                <p><strong>Mot de passe:</strong> <code>12345qwert</code></p>
+                <p><strong>Email:</strong> <code>adambdr413@gmail.com</code></p>
+                <p><strong>Mot de passe:</strong> <code>qazwsx</code></p>
             </div>
         </div>
 
