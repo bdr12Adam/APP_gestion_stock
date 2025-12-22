@@ -99,9 +99,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 /* ===== MISE À JOUR VENTE ===== */
                 $prix_nouveau = $article_nouveau['prix_unitaire'] * $quantite_nouvelle;
 
+                // Vérifier si la colonne 'prix' existe, sinon utiliser 'prix_total'
                 $stmt3 = $conn->prepare("
                     UPDATE vente 
-                    SET id_article=?, id_client=?, quantite=?, prix=?
+                    SET id_article=?, id_client=?, quantite=?, prix_total=?
                     WHERE id=?
                 ");
                 $stmt3->bind_param(
@@ -112,18 +113,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $prix_nouveau,
                     $id_vente
                 );
-                $stmt3->execute();
+                
+                if (!$stmt3->execute()) {
+                    throw new Exception("❌ Erreur lors de la mise à jour : " . $stmt3->error);
+                }
                 $stmt3->close();
 
                 $conn->commit();
 
-                $message = "✅ Vente modifiée avec succès.";
-                $typeMessage = "success";
-
-                // Recharger données
-                $vente = getVenteById($id_vente);
-                $article_original = getArticleById($vente['id_article']);
-                $quantite_originale = $vente['quantite'];
+                // ✅ REDIRECTION IMMÉDIATE APRÈS SUCCÈS
+                ?>
+                <script>
+                    window.location.href = 'vente.php';
+                </script>
+                <?php
+                exit;
 
             } catch (Exception $e) {
                 $conn->rollback();
@@ -152,63 +156,83 @@ if (!$existe && $article_original) {
 ?>
 
 <style>
-.form-container {
-    max-width: 800px;
-    margin: 30px auto;
-    padding: 30px;
-    background: #ffffff;
-    border-radius: 14px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-    position: relative;
-    overflow: hidden;
+/* ==========================
+   FORMULAIRE DE MODIFICATION
+   ========================== */
+
+.edit-container {
+    max-width: 700px;
+    margin: 40px auto;
+    padding: 0 20px;
 }
 
-.form-container::before {
+.edit-card {
+    background: #ffffff;
+    padding: 40px 45px;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border: none;
+    position: relative;
+    overflow: hidden;
+    animation: slideInUp 0.6s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Barre décorative gradient en haut */
+.edit-card::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    height: 5px;
-    background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+    height: 6px;
+    background: linear-gradient(90deg, #7a32e5ff 0%, #7505e4ff 100%);
 }
 
-.form-container h4 {
-    font-size: 22px;
+/* Titre */
+.edit-card h4 {
+    font-size: 26px;
     font-weight: 700;
     color: #2d3748;
-    margin-bottom: 25px;
+    margin-bottom: 10px;
     text-align: center;
     position: relative;
-    padding-bottom: 10px;
 }
 
-.form-container h4::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80px;
-    height: 3px;
-    background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
-    border-radius: 2px;
-}
-
-.form-container label {
-    display: block;
+.edit-card .subtitle {
+    text-align: center;
+    color: #718096;
     font-size: 14px;
+    margin-bottom: 30px;
+    font-weight: 500;
+}
+
+/* Labels */
+.edit-card label {
+    display: block;
+    font-size: 13px;
     font-weight: 600;
     color: #4a5568;
-    margin-bottom: 8px;
+    margin-bottom: 7px;
 }
 
-.input-style {
+/* Inputs et selects */
+.input-style-edit {
     width: 100%;
     padding: 12px 16px;
     border: 2px solid #e2e8f0;
-    border-radius: 9px;
-    font-size: 14px;
+    border-radius: 10px;
+    font-size: 15px;
     color: #2d3748;
     background-color: #f7fafc;
     outline: none;
@@ -216,19 +240,20 @@ if (!$existe && $article_original) {
     box-sizing: border-box;
 }
 
-.input-style:hover {
+.input-style-edit:hover {
     background-color: #ffffff;
     border-color: #cbd5e0;
 }
 
-.input-style:focus {
+.input-style-edit:focus {
     background-color: #ffffff;
-    border-color: #f59e0b;
+    border-color: rgba(154, 55, 235, 1);
     box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
     transform: translateY(-2px);
 }
 
-select.input-style {
+/* Select personnalisé */
+select.input-style-edit {
     cursor: pointer;
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
@@ -237,139 +262,243 @@ select.input-style {
     padding-right: 45px;
 }
 
-.info-prix {
-    background: #fef3c7;
-    border-left: 4px solid #f59e0b;
-    padding: 12px 15px;
-    border-radius: 8px;
-    font-size: 13px;
-    color: #92400e;
-    font-weight: 600;
-    margin-top: 15px;
+/* Groupes de formulaire */
+.form-group-edit {
+    margin-bottom: 20px;
 }
 
-.btn-actions {
+/* Conteneur des boutons */
+.button-group {
     display: flex;
     gap: 15px;
-    margin-top: 25px;
+    margin-top: 30px;
 }
 
-.btn-primary, .btn-secondary {
+/* Bouton Mettre à jour */
+.btn-update {
     flex: 1;
-    padding: 12px 0;
+    padding: 14px 0;
     font-size: 15px;
     font-weight: 700;
     color: #ffffff;
+    background: linear-gradient(135deg, #ab58ffff 0%, #ac03e0ff 100%);
     border: none;
-    border-radius: 9px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+.btn-update:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(171, 11, 245, 0.45);
+    background: linear-gradient(135deg, #880ce8ff 0%, #780bf5ff 100%);
+}
+
+.btn-update:active {
+    transform: translateY(-1px);
+}
+
+/* Bouton Annuler */
+.btn-cancel {
+    flex: 1;
+    padding: 14px 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #4a5568;
+    background: #e2e8f0;
+    border: 2px solid #cbd5e0;
+    border-radius: 10px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     text-transform: uppercase;
     letter-spacing: 0.8px;
     text-decoration: none;
+    display: inline-block;
     text-align: center;
 }
 
-.btn-primary {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35);
+.btn-cancel:hover {
+    background: #cbd5e0;
+    border-color: #a0aec0;
+    transform: translateY(-2px);
+    color: #2d3748;
 }
 
-.btn-primary:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(245, 158, 11, 0.45);
-    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-}
-
-.btn-secondary {
-    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
-    box-shadow: 0 4px 15px rgba(107, 114, 128, 0.35);
-}
-
-.btn-secondary:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(107, 114, 128, 0.45);
-    background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
-}
-
-.alert {
+/* Alert messages */
+.alert-edit {
     padding: 12px 16px;
     border-radius: 8px;
     font-size: 14px;
     font-weight: 600;
     text-align: center;
     margin-bottom: 20px;
+    animation: slideInDown 0.4s ease-out;
 }
 
-.alert-success {
-    background-color: #d4edda;
-    color: #155724;
-    border-left: 4px solid #28a745;
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.alert-danger {
-    background-color: #f8d7da;
-    color: #721c24;
-    border-left: 4px solid #dc3545;
+.alert-edit.alert-danger {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border-left: 4px solid #dc2626;
+}
+
+.alert-edit.alert-success {
+    background-color: #d1fae5;
+    color: #065f46;
+    border-left: 4px solid #10b981;
+}
+
+/* Badge ID */
+.article-id-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #da0bf5ff 0%, #d836edff 100%);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+/* Info Prix */
+.info-prix {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-left: 4px solid #f59e0b;
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-size: 15px;
+    color: #92400e;
+    font-weight: 700;
+    margin-top: 20px;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .edit-container {
+        margin: 20px auto;
+    }
+    
+    .edit-card {
+        padding: 30px 25px;
+        border-radius: 16px;
+    }
+    
+    .edit-card h4 {
+        font-size: 22px;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+    
+    .btn-update,
+    .btn-cancel {
+        width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .edit-card {
+        padding: 25px 20px;
+    }
+    
+    .input-style-edit {
+        font-size: 14px;
+        padding: 11px 14px;
+    }
 }
 </style>
 
 <section class="home-section">
-<div class="home-content">
+    <div class="home-content">
+        <div class="edit-container">
+            <div class="edit-card">
+                
+                <h4>✏️ Modifier une vente</h4>
+                <div class="subtitle">Modifiez les informations de la vente ci-dessous</div>
+                
+                <div class="text-center">
+                    <span class="article-id-badge">ID: <?= $vente['id'] ?></span>
+                </div>
 
-<div class="form-container">
-<h4>✏️ Modifier une Vente</h4>
+                <?php if ($message): ?>
+                    <div class="alert-edit alert-<?= $typeMessage ?>">
+                        <?= $message ?>
+                    </div>
+                <?php endif; ?>
 
-<?php if ($message): ?>
-<div class="alert alert-<?= $typeMessage ?>">
-    <?= $message ?>
-</div>
-<?php endif; ?>
+                <form method="post" id="modifVenteForm">
+                    
+                    <div class="form-group-edit">
+                        <label>Article *</label>
+                        <select name="id_article" id="id_article" class="input-style-edit" onchange="updatePrix()" required>
+                            <?php foreach ($articles as $art): ?>
+                                <option value="<?= $art['id'] ?>"
+                                    data-prix="<?= $art['prix_unitaire'] ?>"
+                                    data-stock="<?= $art['quantite'] + ($art['id'] == $vente['id_article'] ? $quantite_originale : 0) ?>"
+                                    <?= $art['id'] == $vente['id_article'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($art['nom_article']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
 
-<form method="post" id="modifVenteForm">
+                    <div class="form-group-edit">
+                        <label>Client *</label>
+                        <select name="id_client" class="input-style-edit" required>
+                            <?php foreach ($clients as $c): ?>
+                                <option value="<?= $c['id'] ?>" <?= $c['id'] == $vente['id_client'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($c['nom']) ?> <?= htmlspecialchars($c['prenom']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
 
-<label>Article *</label>
-<select name="id_article" id="id_article" class="input-style" onchange="updatePrix()" required>
-    <?php foreach ($articles as $art): ?>
-        <option value="<?= $art['id'] ?>"
-            data-prix="<?= $art['prix_unitaire'] ?>"
-            data-stock="<?= $art['quantite'] + ($art['id'] == $vente['id_article'] ? $quantite_originale : 0) ?>"
-            <?= $art['id'] == $vente['id_article'] ? 'selected' : '' ?>>
-            <?= htmlspecialchars($art['nom_article']) ?>
-        </option>
-    <?php endforeach; ?>
-</select>
+                    <div class="form-group-edit">
+                        <label>Quantité *</label>
+                        <input type="number" 
+                               name="quantite" 
+                               id="quantite"
+                               class="input-style-edit"
+                               min="1"
+                               value="<?= $vente['quantite'] ?>"
+                               oninput="updatePrix()" 
+                               required>
+                    </div>
 
-<label>Client *</label>
-<select name="id_client" class="input-style" required>
-    <?php foreach ($clients as $c): ?>
-        <option value="<?= $c['id'] ?>" <?= $c['id'] == $vente['id_client'] ? 'selected' : '' ?>>
-            <?= htmlspecialchars($c['nom']) ?> <?= htmlspecialchars($c['prenom']) ?>
-        </option>
-    <?php endforeach; ?>
-</select>
+                    <div class="info-prix" id="info_prix">
+                        💰 Nouveau Prix Total : <span id="prix_total_display">0.00</span> DH
+                    </div>
 
-<label>Quantité *</label>
-<input type="number" name="quantite" id="quantite"
-       class="input-style"
-       min="1"
-       value="<?= $vente['quantite'] ?>"
-       oninput="updatePrix()" required>
+                    <div class="button-group">
+                        <button type="submit" class="btn-update">
+                            💾 Enregistrer
+                        </button>
+                        <a href="vente.php" class="btn-cancel">
+                            ❌ Annuler
+                        </a>
+                    </div>
 
-<div class="info-prix" id="info_prix">
-    💰 Nouveau Prix Total :
-    <span id="prix_total_display">0.00</span> DH
-</div>
+                </form>
 
-<div class="btn-actions">
-    <button class="btn-primary">💾 Enregistrer</button>
-    <a href="vente.php" class="btn-secondary">❌ Annuler</a>
-</div>
-
-</form>
-</div>
-
-</div>
+            </div>
+        </div>
+    </div>
 </section>
 
 <script>

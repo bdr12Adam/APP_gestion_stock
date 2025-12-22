@@ -1,4 +1,6 @@
 <?php
+// ⚠️ NE RIEN METTRE AVANT CE <?php (pas même un espace)
+
 include "entete.php";
 include "../model/connexion.php";
 include "../model/functions.php";
@@ -26,7 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = "Tous les champs sont obligatoires.";
         $typeMessage = "danger";
     } else {
-        modifierArticle(
+        // Modifier l'article
+        $resultat = modifierArticle(
             $id,
             $_POST['nom_article'],
             $_POST['categorie'],
@@ -36,8 +39,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             str_replace("T", " ", $_POST['date_expiration']) . ":00"
         );
 
-        header("Location: article.php");
-        exit;
+        // Vérifier si la modification a réussi
+        if ($resultat) {
+            // Utiliser une redirection JavaScript en cas de problème avec header()
+            echo "<script>window.location.href='article.php';</script>";
+            exit;
+        } else {
+            $message = "Erreur lors de la modification.";
+            $typeMessage = "danger";
+        }
     }
 }
 ?>
@@ -176,6 +186,9 @@ select.input-style-edit {
     box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35);
     text-transform: uppercase;
     letter-spacing: 0.8px;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
 }
 
 .btn-update:hover {
@@ -240,6 +253,12 @@ select.input-style-edit {
     background-color: #fee2e2;
     color: #991b1b;
     border-left: 4px solid #dc2626;
+}
+
+.alert-edit.alert-success {
+    background-color: #d1fae5;
+    color: #065f46;
+    border-left: 4px solid #10b981;
 }
 
 /* Badge ID */
@@ -310,7 +329,7 @@ select.input-style-edit {
                     </div>
                 <?php endif; ?>
 
-                <form method="post">
+                <form method="post" id="formModifier">
                     
                     <div class="form-group-edit">
                         <label>Nom de l'article</label>
@@ -318,12 +337,13 @@ select.input-style-edit {
                                name="nom_article" 
                                value="<?= htmlspecialchars($article['nom_article']) ?>" 
                                class="input-style-edit"
-                               placeholder="Entrez le nom de l'article">
+                               placeholder="Entrez le nom de l'article"
+                               required>
                     </div>
 
                     <div class="form-group-edit">
                         <label>Catégorie</label>
-                        <select name="categorie" class="input-style-edit">
+                        <select name="categorie" class="input-style-edit" required>
                             <option value="">-- Choisir --</option>
                             <option value="Ordinateur" <?= $article['categorie'] == 'Ordinateur' ? 'selected' : '' ?>>Ordinateur</option>
                             <option value="Imprimante" <?= $article['categorie'] == 'Imprimante' ? 'selected' : '' ?>>Imprimante</option>
@@ -337,7 +357,8 @@ select.input-style-edit {
                                name="quantite" 
                                value="<?= $article['quantite'] ?>" 
                                class="input-style-edit"
-                               placeholder="Quantité en stock">
+                               placeholder="Quantité en stock"
+                               required>
                     </div>
 
                     <div class="form-group-edit">
@@ -347,7 +368,8 @@ select.input-style-edit {
                                name="prix_unitaire" 
                                value="<?= $article['prix_unitaire'] ?>" 
                                class="input-style-edit"
-                               placeholder="Prix en dirhams">
+                               placeholder="Prix en dirhams"
+                               required>
                     </div>
 
                     <div class="form-group-edit">
@@ -355,7 +377,8 @@ select.input-style-edit {
                         <input type="datetime-local" 
                                name="date_fabrication"
                                value="<?= date('Y-m-d\TH:i', strtotime($article['date_fabrication'])) ?>"
-                               class="input-style-edit">
+                               class="input-style-edit"
+                               required>
                     </div>
 
                     <div class="form-group-edit">
@@ -363,7 +386,8 @@ select.input-style-edit {
                         <input type="datetime-local" 
                                name="date_expiration"
                                value="<?= date('Y-m-d\TH:i', strtotime($article['date_expiration'])) ?>"
-                               class="input-style-edit">
+                               class="input-style-edit"
+                               required>
                     </div>
 
                     <div class="button-group">
@@ -381,3 +405,12 @@ select.input-style-edit {
         </div>
     </div>
 </section>
+
+<script>
+// Debug : afficher les erreurs de formulaire
+document.getElementById('formModifier').addEventListener('submit', function(e) {
+    console.log('Formulaire soumis');
+});
+</script>
+
+<?php include "pied.php"; ?>

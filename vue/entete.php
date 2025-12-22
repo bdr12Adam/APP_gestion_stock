@@ -55,6 +55,294 @@ $user_initiale = strtoupper(substr($user_prenom, 0, 1));
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: #fff;
       }
+
+      /* Google Font */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap");
+
+/* RESET */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+}
+
+body {
+    background: #f0f2ff;
+}
+
+/* ================= SIDEBAR ================= */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 240px;
+    background: linear-gradient(135deg, #0a37ffff, #c074ffff);
+    transition: all 0.4s linear;
+}
+
+.sidebar.active {
+    width: 70px;
+}
+
+.sidebar .logo-details {
+    height: 80px;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar .logo-details i {
+    min-width: 70px;
+    font-size: 30px;
+    text-align: center;
+    color: #fff;
+}
+
+.sidebar .logo-details .logo_name {
+    font-size: 22px;
+    color: #fff;
+    font-weight: 600;
+}
+
+/* LINKS */
+.sidebar .nav-links {
+    margin-top: 20px;
+}
+
+.sidebar .nav-links li {
+    list-style: none;
+    height: 50px;
+}
+
+.sidebar .nav-links li a {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    transition: all 0.3s linear;
+}
+
+.sidebar .nav-links li a:hover,
+.sidebar .nav-links li a.active {
+    background: rgba(255, 255, 255, 0.2);
+    padding-left: 12px;
+}
+
+.sidebar .nav-links li i {
+    min-width: 70px;
+    font-size: 20px;
+    text-align: center;
+    color: #fff;
+    transition: transform 0.3s linear;
+}
+
+.sidebar .nav-links li a:hover i {
+    transform: scale(1.2);
+}
+
+.sidebar .nav-links li .links_name {
+    color: #fff;
+    font-size: 15px;
+}
+
+/* LOGOUT */
+.sidebar .nav-links .log_out {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+}
+
+/* ================= MAIN ================= */
+.home-section {
+    position: relative;
+    min-height: 100vh;
+    width: calc(100% - 240px);
+    left: 240px;
+    background: linear-gradient(180deg, #f9faff, #eef1ff);
+    transition: all 0.4s linear;
+}
+
+.sidebar.active ~ .home-section {
+    width: calc(100% - 70px);
+    left: 70px;
+}
+
+/* ================= NAVBAR ================= */
+.home-section nav {
+    position: fixed;
+    top: 0;
+    left: 240px;
+    width: calc(100% - 240px);
+    height: 80px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 25px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: all 0.4s linear;
+    z-index: 100;
+}
+
+.sidebar.active ~ .home-section nav {
+    left: 70px;
+    width: calc(100% - 70px);
+}
+
+/* NAV LEFT */
+.sidebar-button {
+    display: flex;
+    align-items: center;
+    font-size: 26px;
+    cursor: pointer;
+}
+
+/* SEARCH */
+.search-box {
+    width: 500px;
+    position: relative;
+}
+
+.search-box input {
+    width: 100%;
+    height: 45px;
+    border-radius: 8px;
+    border: none;
+    padding: 0 15px;
+    background: #f1f3ff;
+}
+
+.search-box i {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #667eea;
+    font-size: 20px;
+}
+
+/* PROFILE */
+.profile-details {
+    display: flex;
+    align-items: center;
+    background: #f1f3ff;
+    padding: 5px 15px;
+    border-radius: 8px;
+}
+
+.profile-details img {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+}
+
+.profile-details .admin_name {
+    margin: 0 10px;
+    font-weight: 500;
+}
+
+/* ================= CONTENT ================= */
+.home-content {
+    padding: 120px 25px 25px;
+}
+
+/* ================= STATS BOX ================= */
+.overview-boxes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.overview-boxes .box {
+    background: #fff;
+    padding: 20px;
+    border-radius: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.35s linear;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+.overview-boxes .box:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(102,126,234,0.35);
+}
+
+.box .number {
+    font-size: 34px;
+    font-weight: 600;
+}
+
+.box-topic {
+    font-size: 18px;
+}
+
+.cart {
+    width: 55px;
+    height: 55px;
+    border-radius: 14px;
+    background: #e0e5ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: #667eea;
+}
+
+/* ================= SALES ================= */
+.sales-boxes {
+    display: flex;
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.sales-boxes .box {
+    background: #fff;
+    padding: 25px;
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    transition: all 0.35s linear;
+}
+
+.sales-boxes .box:hover {
+    transform: translateY(-6px);
+}
+
+.recent-sales {
+    flex: 2;
+}
+
+.top-sales {
+    flex: 1;
+}
+
+/* BUTTON */
+.button a {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    padding: 8px 16px;
+    border-radius: 6px;
+    color: #fff;
+    text-decoration: none;
+    transition: all 0.3s linear;
+}
+
+.button a:hover {
+    transform: scale(1.05);
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 900px) {
+    .sales-boxes {
+        flex-direction: column;
+    }
+
+    .search-box {
+        display: none;
+    }
+}
+
       
       .nav-links li a.active i {
         color: #fff;
@@ -276,6 +564,7 @@ $user_initiale = strtoupper(substr($user_prenom, 0, 1));
           <input type="text" placeholder="Recherche..." />
           <i class="bx bx-search"></i>
         </div>
+        
         <div class="profile-details" id="profileToggle">
           <div class="profile-avatar"><?= $user_initiale ?></div>
           <div class="profile-info">

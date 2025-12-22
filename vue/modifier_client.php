@@ -1,45 +1,78 @@
 <?php
 include "entete.php";
 include "../model/connexion.php";
-include "../model/functions.php";
+include_once "../model/functions.php";
 
-$id = $_GET['id'] ?? null;
-$client = getClientById($id);
+$message = "";
+$typeMessage = "";
+
+/* ===============================
+   RÉCUPÉRATION DU CLIENT
+================================ */
+
+$id_client = isset($_GET['id']) ? intval($_GET['id']) : 0;
+if ($id_client <= 0) {
+    header("Location: client.php");
+    exit;
+}
+
+// Récupération des données du client
+$stmt = $conn->prepare("SELECT * FROM client WHERE id = ?");
+$stmt->bind_param("i", $id_client);
+$stmt->execute();
+$result = $stmt->get_result();
+$client = $result->fetch_assoc();
+$stmt->close();
 
 if (!$client) {
     header("Location: client.php");
     exit;
 }
 
-$message = "";
-$typeMessage = "";
+/* ===============================
+   TRAITEMENT MODIFICATION
+================================ */
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (
-        empty($_POST["nom"]) ||
-        empty($_POST["prenom"]) ||
-        empty($_POST["telephone"]) ||
-        empty($_POST["adresse"])
+        empty($_POST['nom']) ||
+        empty($_POST['prenom']) ||
+        empty($_POST['telephone']) ||
+        empty($_POST['adresse'])
     ) {
-        $message = "Tous les champs sont obligatoires.";
+        $message = "❌ Tous les champs sont obligatoires.";
         $typeMessage = "danger";
     } else {
 
-        modifierClient(
-            $id,
-            $_POST["nom"],
-            $_POST["prenom"],
-            $_POST["telephone"],
-            $_POST["adresse"]
-        );
+        $nom = trim($_POST['nom']);
+        $prenom = trim($_POST['prenom']);
+        $telephone = trim($_POST['telephone']);
+        $adresse = trim($_POST['adresse']);
 
-        header("Location: client.php");
-        exit;
+        $stmt = $conn->prepare("
+            UPDATE client
+            SET nom = ?, prenom = ?, telephone = ?, adresse = ?
+            WHERE id = ?
+        ");
+        
+        $stmt->bind_param("ssssi", $nom, $prenom, $telephone, $adresse, $id_client);
+
+        if ($stmt->execute()) {
+            $stmt->close();
+            
+            // ✅ REDIRECTION APRÈS SUCCÈS
+            echo "<script>window.location.href = 'client.php';</script>";
+            exit;
+            
+        } else {
+            $message = "❌ Erreur lors de la modification : " . $conn->error;
+            $typeMessage = "danger";
+            $stmt->close();
+        }
     }
 }
 ?>
-
 
 <style>
 /* ==========================
@@ -148,6 +181,13 @@ select.input-style-edit {
     padding-right: 45px;
 }
 
+/* Textarea */
+textarea.input-style-edit {
+    min-height: 100px;
+    resize: vertical;
+    font-family: inherit;
+}
+
 /* Groupes de formulaire */
 .form-group-edit {
     margin-bottom: 20px;
@@ -241,6 +281,12 @@ select.input-style-edit {
     border-left: 4px solid #dc2626;
 }
 
+.alert-edit.alert-success {
+    background-color: #d1fae5;
+    color: #065f46;
+    border-left: 4px solid #10b981;
+}
+
 /* Badge ID */
 .article-id-badge {
     display: inline-block;
@@ -290,6 +336,7 @@ select.input-style-edit {
     }
 }
 </style>
+
 <section class="home-section">
     <div class="home-content">
         <div class="edit-container">
@@ -315,7 +362,8 @@ select.input-style-edit {
                         <input type="text"
                                name="nom"
                                value="<?= htmlspecialchars($client['nom']) ?>"
-                               class="input-style-edit">
+                               class="input-style-edit"
+                               required>
                     </div>
 
                     <div class="form-group-edit">
@@ -323,7 +371,8 @@ select.input-style-edit {
                         <input type="text"
                                name="prenom"
                                value="<?= htmlspecialchars($client['prenom']) ?>"
-                               class="input-style-edit">
+                               class="input-style-edit"
+                               required>
                     </div>
 
                     <div class="form-group-edit">
@@ -331,20 +380,22 @@ select.input-style-edit {
                         <input type="text"
                                name="telephone"
                                value="<?= htmlspecialchars($client['telephone']) ?>"
-                               class="input-style-edit">
+                               class="input-style-edit"
+                               required>
                     </div>
 
                     <div class="form-group-edit">
                         <label>Adresse</label>
                         <textarea name="adresse"
-                                  class="input-style-edit"><?= htmlspecialchars($client['adresse']) ?></textarea>
+                                  class="input-style-edit"
+                                  required><?= htmlspecialchars($client['adresse']) ?></textarea>
                     </div>
 
                     <div class="button-group">
                         <button type="submit" class="btn-update">
                             💾 Mettre à jour
                         </button>
-                        <a href="../vue/client.php" class="btn-cancel">
+                        <a href="client.php" class="btn-cancel">
                             ❌ Annuler
                         </a>
                     </div>
@@ -355,3 +406,4 @@ select.input-style-edit {
         </div>
     </div>
 </section>
+<?php include "pied.php"; ?>

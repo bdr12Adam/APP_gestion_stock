@@ -17,7 +17,7 @@ body {
     position: fixed;
     height: 100%;
     width: 240px;
-    background: #0a2558;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     transition: all 0.5s ease;
 }
 
@@ -65,11 +65,11 @@ body {
 }
 
 .sidebar .nav-links li a.active {
-    background: #081d45;
+    background: rgba(255, 255, 255, 0.2);
 }
 
 .sidebar .nav-links li a:hover {
-    background: #081d45;
+    background: rgba(255, 255, 255, 0.15);
 }
 
 .sidebar .nav-links li i {
@@ -162,7 +162,7 @@ nav .search-box .bx-search {
     position: absolute;
     height: 40px;
     width: 40px;
-    background: #2697ff;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     right: 5px;
     top: 50%;
     transform: translateY(-50%);
@@ -272,27 +272,27 @@ nav .profile-details i {
     font-size: 32px;
     height: 50px;
     width: 50px;
-    background: #cce5ff;
+    background: #e0d4f7;
     line-height: 50px;
     text-align: center;
-    color: #66b0ff;
+    color: #667eea;
     border-radius: 12px;
     margin: -15px 0 0 6px;
 }
 
 .home-content .box .cart.two {
-    color: #2bd47d;
-    background: #c0f2d8;
+    color: #764ba2;
+    background: #f0e5ff;
 }
 
 .home-content .box .cart.three {
-    color: #ffc233;
-    background: #ffe8b3;
+    color: #9f7aea;
+    background: #e9d8fd;
 }
 
 .home-content .box .cart.four {
-    color: #e05260;
-    background: #f7d4d7;
+    color: #805ad5;
+    background: #ede9fe;
 }
 
 .home-content .total-order {
@@ -353,7 +353,7 @@ nav .profile-details i {
 
 .sales-boxes .box .button a {
     color: #fff;
-    background: #0a2558;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     padding: 4px 12px;
     font-size: 15px;
     font-weight: 400;
@@ -363,7 +363,9 @@ nav .profile-details i {
 }
 
 .sales-boxes .box .button a:hover {
-    background: #0d3073;
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 /* Right box */
@@ -518,5 +520,3 @@ nav .profile-details i {
         width: calc(100% - 60px);
     }
 }
-
-

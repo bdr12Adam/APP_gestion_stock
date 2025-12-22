@@ -570,8 +570,8 @@ td {
                             <th style="width: 180px;">Article</th>
                             <th style="width: 150px;">Client</th>
                             <th style="width: 100px;">Quantité</th>
-                            <th style="width: 120px;">Prix Total</th>
-                            <th style="width: 150px;">Date Vente</th>
+                            <th style="width: 120px;">P-Total</th>
+                            <th style="width: 150px;">D-Vente</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
