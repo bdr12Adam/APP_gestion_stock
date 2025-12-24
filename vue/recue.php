@@ -408,7 +408,7 @@ $totalGeneral = 0;
                 <div class="receipt-footer">
                     <p><strong>Merci pour votre confiance !</strong></p>
                     <p>S-TOCK - Système de Gestion de Stock</p>
-                    <p>📞 Contact: +212 XXX-XXXXXX | 📧 Email: contact@s-tock.ma</p>
+                    <p>📞 Contact: +212 694-546656 | 📧 Email: contact@s-tock.ma</p>
                 </div>
 
             </div>

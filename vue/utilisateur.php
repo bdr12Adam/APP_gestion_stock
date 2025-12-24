@@ -39,10 +39,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['user_prenom'] = $user['prenom'];
                 $_SESSION['user_email'] = $user['email'];
                 $_SESSION['user_role'] = $user['role'];
-
-
-
-                
                 
                 // Rediriger vers le dashboard
                 header("Location: ../vue/dashboard.php");
@@ -56,8 +52,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
     }
 } 
-$password = password_hash("adambendraoui2006", PASSWORD_BCRYPT);
-
 ?>
 
 <!DOCTYPE html>
@@ -68,6 +62,50 @@ $password = password_hash("adambendraoui2006", PASSWORD_BCRYPT);
     <title>Connexion - S-TOCK</title>
     <link href='https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css' rel='stylesheet'>
     <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-gradient-start: #667eea;
+            --bg-gradient-end: #764ba2;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border-color: #e2e8f0;
+            --input-bg: #f8fafc;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --shadow-strong: rgba(0, 0, 0, 0.3);
+            --error-bg: #fee2e2;
+            --error-text: #991b1b;
+            --error-border: #ef4444;
+            --demo-bg: #f0f9ff;
+            --demo-border: #bae6fd;
+            --demo-text: #0369a1;
+            --demo-code-bg: #e0f2fe;
+            --divider-color: #e2e8f0;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-gradient-start: #4c1d95;
+            --bg-gradient-end: #5b21b6;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #64748b;
+            --border-color: #334155;
+            --input-bg: #1e293b;
+            --shadow-color: rgba(0, 0, 0, 0.5);
+            --shadow-strong: rgba(0, 0, 0, 0.7);
+            --error-bg: #7f1d1d;
+            --error-text: #fecaca;
+            --error-border: #dc2626;
+            --demo-bg: #1e3a5f;
+            --demo-border: #1e40af;
+            --demo-text: #93c5fd;
+            --demo-code-bg: #1e40af;
+            --divider-color: #334155;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -80,20 +118,61 @@ $password = password_hash("adambendraoui2006", PASSWORD_BCRYPT);
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--bg-primary);
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
             padding: 20px;
+            transition: background 0.3s ease;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 50px;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px var(--shadow-color);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .theme-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--shadow-color);
+        }
+
+        .theme-toggle i {
+            font-size: 20px;
+            color: var(--text-primary);
+            transition: transform 0.3s ease;
+        }
+
+        .theme-toggle:hover i {
+            transform: rotate(20deg);
+        }
+
+        .theme-toggle span {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
         }
 
         .login-container {
-            background: white;
+            background: var(--bg-secondary);
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 60px var(--shadow-strong);
             overflow: hidden;
             max-width: 1000px;
             width: 100%;
             display: grid;
             grid-template-columns: 1fr 1fr;
             animation: slideIn 0.6s ease-out;
+            transition: background 0.3s ease, box-shadow 0.3s ease;
         }
 
         @keyframes slideIn {
@@ -109,7 +188,7 @@ $password = password_hash("adambendraoui2006", PASSWORD_BCRYPT);
 
         /* PARTIE GAUCHE - Visuel */
         .login-visual {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
             padding: 60px 40px;
             display: flex;
             flex-direction: column;
@@ -193,6 +272,8 @@ $password = password_hash("adambendraoui2006", PASSWORD_BCRYPT);
             display: flex;
             flex-direction: column;
             justify-content: center;
+            background: var(--bg-secondary);
+            transition: background 0.3s ease;
         }
 
         .form-header {
@@ -202,13 +283,15 @@ $password = password_hash("adambendraoui2006", PASSWORD_BCRYPT);
         .form-header h2 {
             font-size: 32px;
             font-weight: 700;
-            color: #1e293b;
+            color: var(--text-primary);
             margin-bottom: 10px;
+            transition: color 0.3s ease;
         }
 
         .form-header p {
-            color: #64748b;
+            color: var(--text-secondary);
             font-size: 16px;
+            transition: color 0.3s ease;
         }
 
         .form-group {
@@ -219,8 +302,9 @@ $password = password_hash("adambendraoui2006", PASSWORD_BCRYPT);
             display: block;
             font-size: 14px;
             font-weight: 600;
-            color: #334155;
+            color: var(--text-primary);
             margin-bottom: 8px;
+            transition: color 0.3s ease;
         }
 
         .input-wrapper {
@@ -232,25 +316,26 @@ $password = password_hash("adambendraoui2006", PASSWORD_BCRYPT);
             left: 16px;
             top: 50%;
             transform: translateY(-50%);
-            color: #94a3b8;
+            color: var(--text-muted);
             font-size: 20px;
+            transition: color 0.3s ease;
         }
 
         .form-input {
             width: 100%;
             padding: 14px 16px 14px 48px;
-            border: 2px solid #e2e8f0;
+            border: 2px solid var(--border-color);
             border-radius: 12px;
             font-size: 15px;
-            color: #1e293b;
-            background: #f8fafc;
+            color: var(--text-primary);
+            background: var(--input-bg);
             transition: all 0.3s ease;
         }
 
         .form-input:focus {
             outline: none;
             border-color: #667eea;
-            background: white;
+            background: var(--bg-secondary);
             box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
         }
 
@@ -260,7 +345,7 @@ $password = password_hash("adambendraoui2006", PASSWORD_BCRYPT);
             top: 50%;
             transform: translateY(-50%);
             cursor: pointer;
-            color: #94a3b8;
+            color: var(--text-muted);
             font-size: 20px;
             transition: color 0.3s ease;
         }
@@ -292,9 +377,10 @@ $password = password_hash("adambendraoui2006", PASSWORD_BCRYPT);
 
         .remember-me label {
             font-size: 14px;
-            color: #64748b;
+            color: var(--text-secondary);
             cursor: pointer;
             user-select: none;
+            transition: color 0.3s ease;
         }
 
         .forgot-password {
@@ -336,8 +422,8 @@ $password = password_hash("adambendraoui2006", PASSWORD_BCRYPT);
         }
 
         .error-message {
-            background: #fee2e2;
-            color: #991b1b;
+            background: var(--error-bg);
+            color: var(--error-text);
             padding: 14px 16px;
             border-radius: 10px;
             margin-bottom: 20px;
@@ -346,8 +432,9 @@ $password = password_hash("adambendraoui2006", PASSWORD_BCRYPT);
             gap: 10px;
             font-size: 14px;
             font-weight: 600;
-            border-left: 4px solid #ef4444;
+            border-left: 4px solid var(--error-border);
             animation: shake 0.5s ease;
+            transition: all 0.3s ease;
         }
 
         @keyframes shake {
@@ -369,46 +456,53 @@ $password = password_hash("adambendraoui2006", PASSWORD_BCRYPT);
             left: 0;
             right: 0;
             height: 1px;
-            background: #e2e8f0;
+            background: var(--divider-color);
+            transition: background 0.3s ease;
         }
 
         .divider span {
-            background: white;
+            background: var(--bg-secondary);
             padding: 0 15px;
-            color: #94a3b8;
+            color: var(--text-muted);
             font-size: 14px;
             position: relative;
             z-index: 1;
+            transition: all 0.3s ease;
         }
 
         .demo-credentials {
-            background: #f0f9ff;
-            border: 2px solid #bae6fd;
+            background: var(--demo-bg);
+            border: 2px solid var(--demo-border);
             border-radius: 12px;
             padding: 16px;
             margin-top: 20px;
+            transition: all 0.3s ease;
         }
 
         .demo-credentials h4 {
-            color: #0369a1;
+            color: var(--demo-text);
             font-size: 14px;
             margin-bottom: 10px;
             display: flex;
             align-items: center;
             gap: 8px;
+            transition: color 0.3s ease;
         }
 
         .demo-credentials p {
-            color: #0c4a6e;
+            color: var(--text-secondary);
             font-size: 13px;
             margin: 5px 0;
+            transition: color 0.3s ease;
         }
 
         .demo-credentials code {
-            background: #e0f2fe;
+            background: var(--demo-code-bg);
             padding: 2px 8px;
             border-radius: 4px;
             font-weight: 600;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
         }
 
         /* RESPONSIVE */
@@ -440,6 +534,16 @@ $password = password_hash("adambendraoui2006", PASSWORD_BCRYPT);
             .form-header h2 {
                 font-size: 28px;
             }
+
+            .theme-toggle {
+                top: 10px;
+                right: 10px;
+                padding: 8px 15px;
+            }
+
+            .theme-toggle span {
+                display: none;
+            }
         }
 
         @media (max-width: 480px) {
@@ -458,6 +562,12 @@ $password = password_hash("adambendraoui2006", PASSWORD_BCRYPT);
     </style>
 </head>
 <body>
+
+    <!-- Bouton de basculement du thème -->
+    <div class="theme-toggle" id="themeToggle">
+        <i class='bx bx-sun' id="themeIcon"></i>
+        <span id="themeText">Mode Clair</span>
+    </div>
 
     <div class="login-container">
         
@@ -551,6 +661,66 @@ $password = password_hash("adambendraoui2006", PASSWORD_BCRYPT);
     </div>
 
     <script>
+        // ========== GESTION DU THÈME ==========
+        
+        // Fonction pour obtenir le thème préféré
+        function getPreferredTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                return savedTheme;
+            }
+            // Détecter la préférence système
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        // Fonction pour appliquer le thème
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            updateThemeButton(theme);
+        }
+
+        // Fonction pour mettre à jour le bouton de thème
+        function updateThemeButton(theme) {
+            const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+            
+            if (theme === 'dark') {
+                themeIcon.classList.remove('bx-sun');
+                themeIcon.classList.add('bx-moon');
+                themeText.textContent = 'Mode Sombre';
+            } else {
+                themeIcon.classList.remove('bx-moon');
+                themeIcon.classList.add('bx-sun');
+                themeText.textContent = 'Mode Clair';
+            }
+        }
+
+        // Fonction pour basculer le thème
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            setTheme(newTheme);
+        }
+
+        // Initialiser le thème au chargement de la page
+        document.addEventListener('DOMContentLoaded', function() {
+            const preferredTheme = getPreferredTheme();
+            setTheme(preferredTheme);
+        });
+
+        // Écouter les changements de préférence système
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (!localStorage.getItem('theme')) {
+                setTheme(e.matches ? 'dark' : 'light');
+            }
+        });
+
+        // Événement de clic sur le bouton de thème
+        document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+
+        // ========== AUTRES FONCTIONNALITÉS ==========
+        
         // Toggle password visibility
         const togglePassword = document.getElementById('togglePassword');
         const password = document.getElementById('password');

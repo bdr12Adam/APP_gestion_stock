@@ -592,7 +592,7 @@ td {
                                     <td>
                                         <a href="../vue/modifier_vente.php?id=<?= $vente['id'] ?>" 
                                            class="btn-action btn-edit" title="Modifier">
-                                           ✏️ Modifier
+                                           ✏️ 
                                         </a>
 
                                         <a href="../vue/supprimer_vente.php?id=<?= $vente['id'] ?>" 
